@@ -24,10 +24,10 @@ The plugin installs no hooks.
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `GLOSSARY.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
-| `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, PR. GitHub, Linear or beads. |
+| `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, local CI, then a fast-forward merge into the default branch, or a PR with `--pr`. GitHub, Linear or beads. |
 | `worktree-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
 | `setup-project` | Records the project's issue tracker, forge and branch format so the other skills stop guessing. |
-| `orchestrate` | Slices a locked spec into vertical slices, decides per slice whether to delegate, and optionally merges the green PRs. |
+| `orchestrate` | Slices a locked spec into vertical slices, decides per slice whether to delegate, and merges each reviewed slice directly or through PRs. |
 | `wayfinder` | Maps work too large for one session as a set of decision tickets. |
 | `to-spec` | Turns the current conversation into a spec and files it in the issue tracker. |
 | `to-tickets` | Breaks a plan into tracer-bullet tickets. |

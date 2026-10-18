@@ -60,6 +60,9 @@ The issue number, unchanged: `123`.
 `Closes #<number>` in the pull request body. GitHub closes the issue on merge. No follow-up
 command.
 
+In a direct merge, put the same line in the commit message. GitHub closes the issue when the
+commit reaches the default branch.
+
 ## T6 — Create an issue
 
 Inputs: a title, a body, labels, and optionally a parent issue. Write the body to a file

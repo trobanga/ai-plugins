@@ -1,0 +1,65 @@
+schema_version: "1.1"
+name: direct-merge-plan
+description: >
+  The user picks the direct merge for a locked spec: no pull requests, no
+  remote CI. Targets two default failures: starting /implement with `--pr`
+  out of habit, and letting the delegated agent push to main itself, so
+  the orchestrator's review of the diff comes after the merge. The skill
+  must start /implement in delegated mode without `--pr`, in its own
+  worktree, and merge itself by a fast-forward push of the reviewed commit
+  SHA, never by force. Write and Edit must stay unused. The skill sets
+  disable-model-invocation, so run it through evaluate-skill's prepare
+  step; run with --scaffold --allow-tools Bash Write Edit.
+tags: [delegation, direct-merge]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 25
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Write, Edit, AskUserQuestion]
+  prompt: |
+    Use the orchestrate skill on the spec docs/specs/api-keys.md. The
+    tracker is none: that file is the issue, and its four requirements are
+    the slices. I approve this plan: R1 is delegated as a whole slice to a
+    subagent on Sonnet at medium effort. I have no CI minutes left, so
+    merge every slice directly into main, without pull requests. For this
+    session write the exact Agent call for R1 — every parameter and the
+    full brief — and the exact command you will run to merge R1 after you
+    reviewed it. Show both to me, then stop without launching anything.
+graders:
+  - name: delegated-implement-direct
+    type: llm
+    criteria: >
+      PASS if the Agent call for R1 runs the implement skill with
+      `--delegated` and without `--pr`, and sets isolation "worktree".
+      FAIL if it passes `--pr`, or omits delegated mode.
+  - name: agent-does-not-merge
+    type: llm
+    criteria: >
+      PASS if the brief does not tell the subagent to push to main or merge,
+      and the plan has the orchestrator merge after its own review. FAIL if
+      the subagent is told to push or merge the slice into main itself.
+  - name: merge-pins-reviewed-sha
+    type: llm
+    criteria: >
+      PASS if the merge command pushes a specific, reviewed commit SHA (or a
+      variable that holds it) to main on origin as a fast-forward, for
+      example `git push origin "$SHA:refs/heads/main"`. FAIL if it pushes a
+      branch name without pinning the SHA, uses --force or a `+` refspec,
+      or uses a pull-request command.
+  - name: nothing-launched
+    type: tool_used
+    tool: Agent
+    min: 0
+    max: 0
+    arm: both
+  - name: nothing-edited
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?orchestrate"'
+    arm: with-only

@@ -1,12 +1,18 @@
 ---
 name: implement
-description: Work on a tracked issue in a fresh git worktree based on the default branch. Claims the issue, creates the worktree, explores, designs, implements test-first, drives the CRAP score down, kills surviving mutants, reviews, and opens a PR that closes the issue. Works with GitHub, Linear or beads. Use when the user asks to start, pick up, implement, or work on an issue ("work on #123", "implement GIAM-45", "take bd-12", "start on that issue").
+description: Work on a tracked issue in a fresh git worktree based on the default branch. Claims the issue, creates the worktree, explores, designs, implements test-first, drives the CRAP score down, kills surviving mutants, reviews, runs the CI jobs locally, and merges the one commit into the default branch by fast-forward — or, with --pr, opens a PR that closes the issue. Works with GitHub, Linear or beads. Use when the user asks to start, pick up, implement, or work on an issue ("work on #123", "implement GIAM-45", "take bd-12", "start on that issue").
+argument-hint: "<issue-id> [--pr] [--delegated]"
 ---
 
 # Implement a Tracked Issue in a New Worktree
 
 The issue id comes from the skill arguments. If the user gives no id, ask for one — unless
 the tracker is `none`, where the arguments or the conversation describe the work.
+
+**Ship mode.** Without `--pr`, the skill merges the work into the default branch itself
+(**direct merge**, Phase 5A). No pull request opens and no remote CI runs, so the CI jobs run
+locally instead. With `--pr`, the skill opens a pull request and does not merge (Phase 5B).
+If the user asks for a pull request in words, that counts as `--pr`.
 
 This skill is tracker-agnostic. Everything tracker-specific lives in an **adapter** file that
 you read in Phase 0. The phases below never name a tracker.
@@ -34,8 +40,9 @@ The tracker adapter defines seven operations; this skill uses **T1**–**T5** (T
 | T4 | Give the branch id: the identifier as it appears in a branch name |
 | T5 | Close reference: the text or command that closes the issue when the work merges |
 
-The forge adapter defines six; this skill uses **F1**–**F4**, and **F5** in delegated mode
-(F6, merge, serves `orchestrate`):
+The forge adapter defines six; this skill uses **F1** in both ship modes, and **F2**–**F4**,
+plus **F5** in delegated mode, only with `--pr` (F6, merge a pull request, serves
+`orchestrate`):
 
 | | Operation |
 |---|---|
@@ -44,6 +51,8 @@ The forge adapter defines six; this skill uses **F1**–**F4**, and **F5** in de
 | F3 | Open the pull request, carrying T5 |
 | F4 | Review the pull request |
 | F5 | Wait for the checks |
+
+The direct merge needs no forge operation beyond F1: it is plain git, the same on every forge.
 
 > **Tools.** This skill declares no `allowed-tools`. A tracker reached over MCP (Linear) needs
 > tool names that are not known when this file is written, and a closed list would block them.
@@ -61,8 +70,9 @@ The forge adapter defines six; this skill uses **F1**–**F4**, and **F5** in de
 ### Delegated mode
 
 A caller such as `orchestrate` can run this skill in a subagent, with `--delegated` after the
-issue id. You cannot reach the user then; the caller's brief carries the context and the
-decisions the user made. Every phase runs, with these changes:
+issue id (and `--pr` when the caller wants pull requests). You cannot reach the user then; the
+caller's brief carries the context and the decisions the user made. Every phase runs, with
+these changes:
 
 - **No progress bar.** The caller owns it.
 - **A question to the user becomes a stop.** Wherever a step below asks the user (an existing
@@ -75,16 +85,22 @@ decisions the user made. Every phase runs, with these changes:
   `EnterWorktree` or `ExitWorktree`.
 - **Design without plan mode.** In step 13, take the design from the brief. Decide what the
   brief leaves open from the issue and the codebase, and list each such decision under
-  Assumptions in the PR body. If an open question would change the work materially, stop
-  before step 14 and report it.
+  Assumptions in the commit body (direct merge) or the PR body (`--pr`). If an open question
+  would change the work materially, stop before step 14 and report it.
 - **Nested agents run in the foreground.** Each brief you write names the worktree's absolute
   path and tells the agent to work only there.
-- **Wait for the checks.** After step 20, run **F5**. If a check fails, fix it, amend the one
-  commit, push with `--force-with-lease`, and run F5 again. After two failed rounds, stop and
-  report.
-- **Skip step 21 and never merge.** F4 posts on the PR; the caller decides about both.
-- **Final report:** PR number and URL, the state of the checks, the verbatim commit message,
-  the assumptions, the CRAP and mutation results, the steps you skipped, and anything open.
+- **Never merge.** The caller reviews the work before it lands, so it merges.
+  - Direct merge: stop after step 21. Do not push anything. Steps 22 and 23 belong to the
+    caller.
+  - `--pr`: after step 25, run **F5**. If a check fails, fix it, amend the one commit, push
+    with `--force-with-lease`, and run F5 again. After two failed rounds, stop and report.
+    Skip step 26: F4 posts on the PR, and the caller decides about it.
+- **Rebase on request.** If the caller sends a message that the default branch moved, run
+  steps 20 and 21 again, and report the new SHA.
+- **Final report:** the branch and the commit SHA (direct merge), or the PR number and URL
+  and the state of the checks (`--pr`); the verbatim commit message, the assumptions, the
+  CRAP and mutation results, the CI jobs you ran and skipped, the steps you skipped, and
+  anything open.
 
 ---
 
@@ -308,7 +324,8 @@ If T1 errors, handle it per **Error Handling** below.
     testing (its `CLAUDE.md`, task runner, CI or tool configuration). If it does not, the
     agent reports one line — "Mutation step skipped: the project does not do mutation
     testing" — and you continue. A mutant the agent leaves alive does not block shipping:
-    carry its reason into the PR body, so the reviewer can judge it.
+    carry its reason into the commit message (direct merge) or the PR body (`--pr`), so a
+    reader can judge it.
 
     It runs after the CRAP step, because the tests that step adds already kill some mutants,
     and before the review, so the reviewers see the tests it wrote.
@@ -327,12 +344,76 @@ If T1 errors, handle it per **Error Handling** below.
 
 ## Phase 5 — Ship
 
-> **One commit per pull request.** The branch carries exactly one commit. If an earlier phase
-> (for example the TDD loop) made more than one, squash them into one before you push. Every
-> later fix — from a reviewer agent, from **F4**, or from any other part of the workflow —
-> amends that commit. Do not add a fix as an extra commit.
+> **One commit per issue.** The branch carries exactly one commit. If an earlier phase (for
+> example the TDD loop) made more than one, squash them into one before you push. Every later
+> fix — from a reviewer agent, from a local CI job, from **F4**, or from any other part of the
+> workflow — amends that commit. Do not add a fix as an extra commit.
 
-19. **Commit, push and open the pull request** (phase `ship`) per **F2** and **F3**, passing `--signoff`
+Without `--pr`, follow Phase 5A. With `--pr`, follow Phase 5B.
+
+### Phase 5A — Direct merge (default)
+
+19. **Commit** (phase `ship`) with `Skill(commit-commands:commit)`, passing `--signoff`. If the
+    branch already has commits, squash them into one first:
+    `git reset --soft "$(git merge-base HEAD "origin/$DEFAULT_BRANCH")"`. The commit message
+    carries what a PR body would carry: the **T5** close reference, the Assumptions, and the
+    reason for each mutant that survived.
+
+20. **Rebase onto the current default branch:**
+    ```bash
+    git fetch origin "$DEFAULT_BRANCH"
+    git rebase "origin/$DEFAULT_BRANCH"
+    ```
+    With no remote, rebase onto the local default branch instead. If the rebase conflicts,
+    resolve the conflict and amend it into the commit. If the resolution is not obvious from
+    both sides' intent, ask the user.
+
+21. **Run the CI jobs locally.** No remote CI runs on a direct merge, so this step is the merge
+    gate. Run it on the rebased commit, also when step 20 changed nothing.
+    - Find the CI configuration: `.github/workflows/`, `.forgejo/workflows/`, `.gitlab-ci.yml`,
+      `.circleci/config.yml`, `.woodpecker.yml`, `Jenkinsfile`.
+    - For each job that runs on a push or a pull request to the default branch, run its
+      commands in the worktree, in the order the jobs depend on each other. Skip the setup
+      actions (`uses: actions/setup-*`); the local toolchain stands in for them. If the local
+      version differs from the one the job pins, say so. Of a build matrix, run the entry that
+      matches this machine.
+    - Skip a job that deploys, publishes or releases, needs a secret, or needs a service or a
+      platform that this machine lacks. List each skipped job with its reason.
+    - If the project has no CI configuration, run the full test suite and the lint and format
+      checks that the project documents (`CLAUDE.md`, `README`, task runner).
+
+    If a job fails, fix the cause, amend the commit, and run all jobs again, because a fix can
+    break another job. If the same job fails after two fixes, stop and ask the user. Done when
+    every job you did not skip passes on the rebased commit.
+
+22. **Fast-forward the default branch** to the commit:
+    ```bash
+    git push origin "HEAD:refs/heads/$DEFAULT_BRANCH"
+    ```
+    Without force, git accepts only a fast-forward, so nothing on the default branch is lost.
+    Do not push the issue branch itself.
+    - **Rejected because the default branch moved** (`non-fast-forward`, `fetch first`): run
+      steps 20–22 again. After two such rounds, stop and report.
+    - **Rejected by a protection rule or a hook:** stop. Never force, and never bypass the rule.
+      Report the rejection, and offer to ship the same commit with `--pr`.
+    - **No remote:** you cannot update a branch that is checked out in `MAIN_REPO`. Report the
+      command for the user to run there: `git merge --ff-only "$BRANCH"`.
+
+23. **Close the issue and report.**
+    - If T5 closes through the commit message (GitHub `Closes #N`), the push closed the issue.
+      Confirm with **T1**. Otherwise run the T5 command now.
+    - Print the commit text verbatim, in a fenced block:
+      `git log -1 --format='%H%n%B' HEAD`.
+    - Report the SHA that is now on the default branch, the CI jobs you ran and skipped, and
+      that no remote CI and no PR review happened: step 18 was the only review.
+    - The default branch in `MAIN_REPO` is now behind `origin`. Tell the user to run
+      `git pull --ff-only` there. Do not run it yourself; that checkout is the user's.
+
+    Then report `finished: true` to the progress bar.
+
+### Phase 5B — Pull request (`--pr`)
+
+24. **Commit, push and open the pull request** (phase `ship`) per **F2** and **F3**, passing `--signoff`
     (required for all commits in this environment). The PR body must carry the **T5** close
     reference.
 
@@ -354,11 +435,11 @@ If T1 errors, handle it per **Error Handling** below.
 
     Then report `finished: true` to the progress bar.
 
-20. **Assign the PR to yourself** per the forge adapter. If assignment fails (for example the
+25. **Assign the PR to yourself** per the forge adapter. If assignment fails (for example the
     PR was opened from a fork, where the author may not be assignable), report it and
     continue — it is not worth blocking the review on.
 
-21. **Review the pull request** with **F4** — **only for large or risky changes** (wide diffs,
+26. **Review the pull request** with **F4** — **only for large or risky changes** (wide diffs,
     migrations, auth or security-relevant code, data handling). The full review already ran in
     step 18; for routine changes, skip this and finish. If it runs and finds high-severity
     issues, fix them:
@@ -388,6 +469,8 @@ If T1 errors, handle it per **Error Handling** below.
 - **Multiple remotes or ambiguous repo** — the forge adapter names the explicit-repo flag.
 - **Branch already exists** — offer: resume on it, pick a different name, or delete the
   existing worktree first (`worktree-cleanup` handles removal safely).
+- **Push to the default branch rejected by a protection rule** — stop (Phase 5A, step 22).
+  Never force or bypass it. Offer to ship the same commit with `--pr`.
 
 ## Notes
 
@@ -397,5 +480,7 @@ If T1 errors, handle it per **Error Handling** below.
   `Skill(trobanga-skills:worktree-cleanup)`. Changing it here requires changing it there too.
   The location is also a harness contract: `EnterWorktree` is pre-approved only for paths
   under `.claude/worktrees/`.
-- Both the issue and the PR end up claimed by you, so in-flight work is visible without manual
-  bookkeeping.
+- The issue (and with `--pr`, the PR) ends up claimed by you, so in-flight work is visible
+  without manual bookkeeping.
+- A direct merge leaves the issue branch as an ancestor of the default branch, so
+  `worktree-cleanup` sees it as merged.

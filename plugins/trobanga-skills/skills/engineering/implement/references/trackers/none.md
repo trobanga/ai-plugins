@@ -31,7 +31,7 @@ how old the branch is.
 
 ## T5 — Close reference
 
-Describe the work in the PR body. If the issue is a file under `.agents/issues/`, set its
+Describe the work in the PR body, or in the commit message for a direct merge. If the issue is a file under `.agents/issues/`, set its
 `**Status:**` to `closed` after the merge; otherwise say "No tracker: nothing to close".
 
 ## T6 — Create an issue

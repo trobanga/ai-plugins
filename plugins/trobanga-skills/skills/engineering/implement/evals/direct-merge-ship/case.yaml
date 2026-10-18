@@ -1,0 +1,67 @@
+schema_version: "1.1"
+name: direct-merge-ship
+description: >
+  Ship phase without `--pr`. A finished, reviewed feature sits as one commit
+  in a worktree; `origin/main` moved on after the branch was cut, and the CI
+  workflow runs a docstring check that the commit fails. Targets two default
+  failures: handing the branch over unmerged (the old forge-none F3), and
+  pushing straight to main after only the unit tests, so the CI job that no
+  longer runs remotely is never run at all. The skill must rebase onto
+  `origin/main`, run the runnable CI jobs locally (unittest and
+  check_docstrings.py, not the deploy job with its secret), amend the fix
+  into the one commit, and fast-forward `main` on `origin` without force.
+  `origin` is a bare repo in the workspace. Run with --scaffold
+  --allow-tools Bash.
+tags: [phase-5, direct-merge, tracker-none]
+context:
+  scaffold_script: fixture.sh
+execution:
+  max_turns: 40
+  allowed_tools: [Read, Glob, Grep, Skill, Bash, Edit, AskUserQuestion]
+  prompt: |
+    Use the implement skill. Resume in the existing worktree
+    .claude/worktrees/20261018--add-a-name-source-helper. The work there
+    (a `name_source` helper for the `greet` CLI) is implemented, simplified
+    and reviewed: steps 1 to 18 are done. Ship it now. Then report the
+    commit that is on main and every check you ran.
+graders:
+  - name: rebased-onto-origin
+    type: tool_used
+    tool: Bash
+    input_match: 'rebase\s+(-\S+\s+)*origin/main'
+  - name: ran-ci-docstring-check
+    type: tool_used
+    tool: Bash
+    input_match: 'check_docstrings\.py'
+  - name: fast-forward-push-to-main
+    type: tool_used
+    tool: Bash
+    input_match: 'push\s+(-\S+\s+)*origin\s+\S+:(refs/heads/)?main'
+  - name: no-force-push
+    type: tool_used
+    tool: Bash
+    input_match: 'push\s.*(--force|\s-f(\s|$)|\s\+\S+:)'
+    min: 0
+    max: 0
+    arm: both
+  - name: deploy-job-not-run
+    type: tool_used
+    tool: Bash
+    input_match: 'deploy\.sh'
+    min: 0
+    max: 0
+    arm: both
+  - name: reports-merge-and-checks
+    type: llm
+    criteria: >
+      PASS if the final message names the commit now on main, says the
+      docstring check failed at first and was fixed in the same commit (not
+      a second commit), lists the CI jobs it ran locally, and says the
+      deploy job was skipped because it needs a secret. FAIL if it reports
+      the branch as handed over for someone else to merge, or claims a
+      remote CI run.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?implement"'
+    arm: with-only

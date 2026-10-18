@@ -68,6 +68,8 @@ to close on merge.
   Linear GitHub integration matches on, and it is what T2 searches for on the next run.
 - Put `Linear: <issue URL>` in the PR body.
 - After the PR merges, run `linear:update_issue` to set the state to the team's done state.
+- In a direct merge, put the identifier in the commit subject instead, and run
+  `linear:update_issue` after the push.
 
 Tell the user that closing is a separate step here, not automatic on merge.
 

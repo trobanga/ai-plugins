@@ -3,6 +3,10 @@
 For a repo with no pull-request host: a bare remote, a local-only repo, or a mirror where
 review happens elsewhere.
 
+F2–F6 apply to `implement --pr` only. Here `--pr` means: hand the branch over, and let the
+user merge it. The default direct merge of `implement` (its Phase 5A) is plain git and needs
+only F1.
+
 ## F1 — Default branch
 
 ```bash

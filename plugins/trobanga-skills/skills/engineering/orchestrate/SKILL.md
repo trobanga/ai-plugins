@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: Implement a locked spec by slicing it into vertical slices and deciding, per slice, which subagent builds it at which model and effort, optionally merging the green pull requests.
+description: Implement a locked spec by slicing it into vertical slices and deciding, per slice, which subagent builds it at which model and effort. Merges each reviewed slice directly into the default branch, or works through pull requests and optionally merges the green ones.
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,10 @@ You are the orchestrator for implementing a locked spec. The spec lives in the i
 2. Read the ADRs the spec touches and the project's domain glossary. Use its terms exactly.
 3. If the issue is an epic, its children are the candidate slices. Read each child and decide whether it needs further slicing — slice further only when a child is too large to build and verify in one pass. If the issue is not an epic, cut the spec into vertical slices (for a backend: migration + endpoint + tests + docs per slice). File each new slice with operation T6 of `${CLAUDE_SKILL_DIR}/../implement/references/trackers/{TRACKER}.md`, the spec issue as its parent, and wire each dependency between slices with T7.
 4. Get the plan approved before the first build. Show the slice list with, per slice, the call (see **Own the call**) and its one-line reason, then ask with `AskUserQuestion`:
-   - whether to merge green pull requests, and with which method (`merge`, `squash`, `rebase`) — off unless the user says so, and only on a forge with F6;
+   - how slices land (see **Merge**):
+     - **direct merge** (the default): you fast-forward the default branch to each reviewed slice; no pull request, no remote CI;
+     - **pull requests, the user merges**;
+     - **pull requests, you merge the green ones**, with which method (`merge`, `squash`, `rebase`) — only on a forge with F6;
    - whether to post the run summary on the epic at the end.
 
    This approval is the user's consent to each delegation in it. A delegation you add later needs its own yes.
@@ -25,7 +28,7 @@ You never write or edit code, tests or docs yourself — not a slice, not a fixu
 
 The call has three parts:
 
-- **Shape.** Normally a whole slice as its own pull request: a `general-purpose` agent with `isolation: "worktree"` runs `Skill(trobanga-skills:implement)` with `<id> --delegated`. It claims, builds, reviews, pushes, opens the PR and waits for the checks; it does not merge. For a forge without pull requests, or a change too small for the `implement` cycle, use a named agent instead — `trobanga-skills:tdd-implementer-<effort>` for a test-first build — and its definition carries the standing rules, so the brief carries only the scope.
+- **Shape.** Normally a whole slice as one commit: a `general-purpose` agent with `isolation: "worktree"` runs `Skill(trobanga-skills:implement)` with `<id> --delegated`, or `<id> --pr --delegated` when slices land through pull requests. It claims, builds, reviews, and runs the CI jobs locally; it reports the branch and the commit SHA. With `--pr`, it pushes, opens the PR and waits for the checks instead. It never merges. For a change too small for the `implement` cycle, use a named agent instead — `trobanga-skills:tdd-implementer-<effort>` for a test-first build — and its definition carries the standing rules, so the brief carries only the scope.
 - **Agent reuse.** Spec work is largely sequential, and a fresh context per slice pays the code-reading cost again. When a slice builds directly on the previous one and touches the same code, send it with `SendMessage` to the agent that built the previous slice, so its context carries over. Start a fresh agent when the slices are independent, can run in parallel, or need a different model.
 - **Model and effort**, by the next section.
 
@@ -57,9 +60,19 @@ The auto-mode classifier reviews every delegation: the brief before the start, e
 
 ## Merge
 
-Only when the user allowed it in setup step 4. Merge a slice's PR when its checks are green (F5), you reviewed its diff, and its head is the commit you reviewed. Merge with F6 of the forge adapter, in dependency order. After each merge, have every open PR that builds on it rebased onto the default branch and checked again before you merge it.
+Merge as the user chose in setup step 4, in dependency order. In every mode, merge only the commit you reviewed.
 
-When a merge is blocked — a required review, a conflict, a red check — stop that slice and report it. Never pass `--admin` or weaken a check to get a merge through. Without merge permission, a green PR is done for this run, and the user merges.
+**Direct merge.** The slice's agent reports a branch and a commit SHA; its local CI jobs are the only checks. When you reviewed the diff of that SHA against the default branch, fast-forward the default branch to it from the main checkout:
+
+```bash
+git push origin "$REVIEWED_SHA:refs/heads/$DEFAULT_BRANCH"
+```
+
+The worktrees share the object store, so the SHA is reachable without changing directory. Without force, git accepts only a fast-forward. If the push is rejected because the default branch moved (another slice landed), `SendMessage` the slice's agent to rebase and run its CI jobs again, review the new diff, and push its new SHA. After the push, run the T5 command of the tracker when T5 does not close through the commit message. Slices that build on each other run in sequence: start the next one only after the previous one landed, so its worktree starts from it.
+
+**Pull requests.** Only when the user allowed you to merge. Merge a slice's PR when its checks are green (F5), you reviewed its diff, and its head is the commit you reviewed. Merge with F6 of the forge adapter. After each merge, have every open PR that builds on it rebased onto the default branch and checked again before you merge it. Without merge permission, a green PR is done for this run, and the user merges.
+
+When a merge is blocked — a protection rule, a required review, a conflict, a red check — stop that slice and report it. Never force a push, never pass `--admin`, and never weaken a check to get a merge through.
 
 ## Final check
 
@@ -71,10 +84,10 @@ Before closing the run, review the combined work. You may run the review yoursel
 - `Skill(simplify)` — optional polish pass; it applies its fixes, so run it before the final quality gates.
 - `Skill(trobanga-skills:patch-coverage)` — when you want a coverage number for the branch before closing.
 
-Send each finding to the agent of the slice it belongs to, and have it fixed before closing. When merge is on, run the final check before the last merge, so a finding still lands in a PR.
+Send each finding to the agent of the slice it belongs to, and have it fixed before closing. When you merge, run the final check before the last merge, so a finding still lands in a slice's commit or PR. A finding in a slice that already landed goes to a new slice, through the same review and merge.
 
 ## Closing
 
-A slice is done when its tests pass, its docs edit has shipped, and its PR is merged — or, without merge permission, green and handed to the user. Its issue closes through the T5 reference on merge. The run is done when every filed slice is done and the epic (or spec issue) is updated.
+A slice is done when its tests pass, its docs edit has shipped, and its commit is on the default branch — or, with pull requests and without merge permission, its PR is green and handed to the user. Its issue closes through the T5 reference on merge, or through the T5 command you run after it. The run is done when every filed slice is done and the epic (or spec issue) is updated.
 
 End with a short run summary: what shipped (outcome per slice, PR, deviations, open follow-ups) and how the run was orchestrated — per slice: the agent, model, effort, whether it reused an earlier agent, fixup rounds, and any denial. The per-slice one-line decision records are the raw material; this is their roll-up. Show it to the user, and post it on the epic (or spec issue) only if the user said yes in setup.

@@ -2,6 +2,9 @@
 
 Requires `gh`, authenticated. Check with `gh auth status`.
 
+F2–F5 apply to `implement --pr`; the default direct merge of `implement` (its Phase 5A) needs
+only F1. F6 merges a pull request for `orchestrate`.
+
 When the repo has several remotes, or `gh` picks the wrong one, add `--repo owner/name` to
 every command. Put that value in `.agents/issue-tracker.md`.
 

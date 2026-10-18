@@ -63,7 +63,7 @@ There is no PR-body keyword that beads understands. Close it explicitly after th
 bd close "$ID"
 ```
 
-Put `Closes $ID` in the PR body anyway, as a human-readable trail and as the string that T2
+Put `Closes $ID` in the PR body (or, in a direct merge, the commit message) anyway, as a human-readable trail and as the string that T2
 searches for on the next run. It does not close anything by itself.
 
 Tell the user that closing is a separate step here, not automatic on merge.
