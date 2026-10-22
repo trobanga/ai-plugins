@@ -81,6 +81,12 @@ and it governs those two skills.
 That work is MIT licensed, and so is this plugin. The notice is at
 [plugins/trobanga-progress/LICENSE](plugins/trobanga-progress/LICENSE).
 
+`reverse-engineer-anything` is the REA skill from
+[morluto/rea](https://github.com/morluto/rea) by morluto. That work is MIT
+licensed. The notice is at
+[plugins/trobanga-skills/LICENSES/rea-MIT.txt](plugins/trobanga-skills/LICENSES/rea-MIT.txt),
+and it governs that skill.
+
 Everything else here is Apache-2.0.
 
 `improve-codebase-architecture` also draws on "Design It Twice" from John
