@@ -59,6 +59,8 @@ tools document:
 - PIT: `-DtargetClasses=<changed classes>`, or the `scmMutationCoverage`
   goal if the project configures it.
 - Stryker: `--mutate <changed files>`.
+- Mutare: `--since origin/main`. Add `--report json:"$TMPDIR/mutare.json"`;
+  step 4 reads the survivors from it.
 
 For another tool, read its `--help` and use its diff or file filter. If
 it has none, run it on the changed files only. If it cannot be limited
@@ -101,8 +103,30 @@ For each surviving mutant:
      the test suite does not provide. Record one line on why.
 2. Run the tests of the project. They must pass with the unmutated code.
 
-Then run the tool again, on the survivors only if the tool can do that
-(cargo-mutants: `--iterate`). Do at most two rounds. Timed-out mutants
+Then run the tool again, on the survivors only if the tool can do that.
+Do not rerun the whole diff: on a large branch one round takes most of
+an hour, and the mutants it caught stay caught.
+
+- cargo-mutants: `--iterate`.
+- Mutare: pass one `--line <file>:<line>` per survivor line, read from
+  the JSON report of the run before:
+
+  ```bash
+  jq -r '.files | to_entries[] | .key as $f | .value.mutants[]
+         | select(.status == "Survived")
+         | "--line=\($f):\(.position.line // .location.start.line)"' \
+     "$TMPDIR/mutare.json" | sort -u > "$TMPDIR/survivors.args"
+  mix mutare --since origin/main $(cat "$TMPDIR/survivors.args") \
+    --report json:"$TMPDIR/mutare.json"
+  ```
+
+  The lines come from the code as it was in that run. If you changed
+  production code since then (for example removed dead code), lines
+  below the edit have moved: rerun those files with `--only <file>`
+  instead of `--line`. A line that holds no survivor now selects nothing
+  and is harmless.
+
+Do at most two rounds. Timed-out mutants
 count as caught; list them in the report, but do not chase them.
 
 Do not change the production code to kill a mutant, unless the mutant
