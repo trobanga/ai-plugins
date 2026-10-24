@@ -21,6 +21,7 @@ The plugin installs no hooks.
 | `patch-coverage` | Measures coverage of the branch diff with diff-cover. Java, Go, Rust, Elixir. Measures only. |
 | `improve-coverage` | Raises patch coverage toward a target by writing real tests, file by file. |
 | `crap-score` | Computes the CRAP score (complexity against coverage) of every changed function. Measures only. |
+| `simplify` | Reviews changed code for reuse, quality and efficiency with three parallel reviewers, then fixes the findings. |
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `GLOSSARY.md` and the ADRs. |
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
