@@ -4,6 +4,8 @@ description: Implement a locked spec by slicing it into vertical slices and deci
 disable-model-invocation: true
 ---
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 You are the orchestrator for implementing a locked spec. The spec lives in the issue given as the argument. Resolve the tracker and forge by reading `${CLAUDE_SKILL_DIR}/../implement/references/resolve-config.md`, then fetch the issue with its adapter's T1.
 
 ## Setup
@@ -28,7 +30,7 @@ You never write or edit code, tests or docs yourself — not a slice, not a fixu
 
 The call has three parts:
 
-- **Shape.** Normally a whole slice as one commit: a `general-purpose` agent with `isolation: "worktree"` runs `Skill(trobanga-skills:implement)` with `<id> --delegated`, or `<id> --pr --delegated` when slices land through pull requests. It claims, builds, reviews, and runs the CI jobs locally; it reports the branch and the commit SHA. With `--pr`, it pushes, opens the PR and waits for the checks instead. It never merges. For a change too small for the `implement` cycle, use a named agent instead — `trobanga-skills:tdd-implementer-<effort>` for a test-first build — and its definition carries the standing rules, so the brief carries only the scope.
+- **Shape.** Normally a whole slice as one commit: a `general-purpose` agent with `isolation: "worktree"` runs the `implement` skill with `<id> --delegated`, or `<id> --pr --delegated` when slices land through pull requests. It claims, builds, reviews, and runs the CI jobs locally; it reports the branch and the commit SHA. With `--pr`, it pushes, opens the PR and waits for the checks instead. It never merges. For a change too small for the `implement` cycle, use a named agent instead — `trobanga-skills:tdd-implementer-<effort>` for a test-first build — and its definition carries the standing rules, so the brief carries only the scope.
 - **Agent reuse.** Spec work is largely sequential, and a fresh context per slice pays the code-reading cost again. When a slice builds directly on the previous one and touches the same code, send it with `SendMessage` to the agent that built the previous slice, so its context carries over. Start a fresh agent when the slices are independent, can run in parallel, or need a different model.
 - **Model and effort**, by the next section.
 
@@ -76,13 +78,15 @@ When a merge is blocked — a protection rule, a required review, a conflict, a 
 
 ## Final check
 
-Before closing the run, review the combined work. You may run the review yourself or delegate it to a subagent; state which, and why, in one line. A check that applies its own fixes (`Skill(simplify)`, `code-review --fix`) edits code, so it runs inside a subagent, never in your loop. Pick the checks that match the run's risk:
+Before closing the run, review the combined work. You may run the review yourself or delegate it to a subagent; state which, and why, in one line. A check that applies its own fixes (the `simplify` skill, `code-review --fix`) edits code, so it runs inside a subagent, never in your loop. Pick the checks that match the run's risk:
 
-- `Skill(trobanga-skills:conformance-review)` — documented standards and spec compliance side by side; the spec axis is the default check for a locked-spec run.
-- `Skill(code-review)` — correctness bugs and cleanups; pick the effort level to match the risk of the change. The two skills do not overlap: conformance-review owns the written references, code-review owns everything without one.
-- `Skill(security-review)` — when the run touched auth, input handling, secrets, or anything network-facing.
-- `Skill(simplify)` — optional polish pass; it applies its fixes, so run it before the final quality gates.
-- `Skill(trobanga-skills:patch-coverage)` — when you want a coverage number for the branch before closing.
+- the `conformance-review` skill — documented standards and spec compliance side by side; the spec axis is the default check for a locked-spec run.
+- the `code-review` skill — correctness bugs and cleanups; pick the effort level to match the risk of the change. The two skills do not overlap: conformance-review owns the written references, code-review owns everything without one.
+- the `security-review` skill — when the run touched auth, input handling, secrets, or anything network-facing.
+- the `simplify` skill — optional polish pass; it applies its fixes, so run it before the final quality gates.
+- the `patch-coverage` skill — when you want a coverage number for the branch before closing.
+
+If a skill on this list does not exist in the harness, let a subagent do that check as its line describes, and say so in the report.
 
 Send each finding to the agent of the slice it belongs to, and have it fixed before closing. When you merge, run the final check before the last merge, so a finding still lands in a slice's commit or PR. A finding in a slice that already landed goes to a new slice, through the same review and merge.
 

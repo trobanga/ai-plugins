@@ -34,7 +34,7 @@ Resolve each value by the first rule that answers it:
    evidence, ask the user, and recommend the value it points to.
 
 If rule 3 decided a value, state the guess in one line and continue. If no rule decided the
-TRACKER, ask the user, and offer `Skill(trobanga-skills:setup-project)` to persist the answer.
+TRACKER, ask the user, and offer the `setup-project` skill to persist the answer.
 
 The branch format is `{id}--{slug}` unless the config sets `{id}-{slug}`. The double separator
 is what lets a non-numeric id such as `giam-123` be split from its slug, so `{id}-{slug}` works

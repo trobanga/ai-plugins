@@ -52,7 +52,7 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 When classifying the candidate's dependencies or planning its tests, read [DEEPENING.md](DEEPENING.md). When the user wants to explore alternative interfaces for the deepened module, follow [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
 
-Invoke `Skill(trobanga-skills:domain-modeling)`, which owns `GLOSSARY.md` and the ADRs, the moment one of these happens:
+Invoke the `domain-modeling` skill, which owns `GLOSSARY.md` and the ADRs, the moment one of these happens:
 
 - **The deepened module is named after a concept not in `GLOSSARY.md`, or a fuzzy term gets sharpened** — record the term.
 - **The user rejects the candidate with a load-bearing reason** — offer an ADR: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Offer it only when a future explorer would need the reason to avoid re-suggesting the candidate; skip ephemeral reasons ("not worth it right now") and self-evident ones. Then offer the remaining candidates from step 2.

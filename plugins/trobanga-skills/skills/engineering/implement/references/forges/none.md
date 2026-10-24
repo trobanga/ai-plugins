@@ -18,7 +18,8 @@ If the repo has no `origin`, ask the user for the base branch. Do not guess.
 
 ## F2 — Commit and push
 
-Commit with `Skill(commit-commands:commit)`, passing `--signoff`.
+Commit with the `commit-commands:commit` skill, passing `--signoff`. If that skill does not
+exist, run `git commit --signoff` with a message in the style of `git log`.
 
 Then push, if a remote exists:
 

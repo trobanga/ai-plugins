@@ -4,6 +4,8 @@ description: Turn the current conversation into a spec and publish it to the pro
 disable-model-invocation: true
 ---
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 This skill takes the current conversation context and codebase understanding and produces a spec (you may know this document as a PRD). Do NOT interview the user — just synthesize what you already know.
 
 Before you publish anything, resolve the project's tracker by reading `${CLAUDE_SKILL_DIR}/../implement/references/resolve-config.md`. Publish with operation T6 of `${CLAUDE_SKILL_DIR}/../implement/references/trackers/{TRACKER}.md`.

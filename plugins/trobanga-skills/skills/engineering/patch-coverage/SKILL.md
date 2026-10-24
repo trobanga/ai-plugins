@@ -6,6 +6,8 @@ allowed-tools: Bash, Read, Glob
 
 # Patch Coverage
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Compute patch coverage for the current branch compared to origin/main.
 
 ## Prerequisites

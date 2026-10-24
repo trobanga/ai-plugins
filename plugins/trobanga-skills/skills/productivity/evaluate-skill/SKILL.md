@@ -5,6 +5,8 @@ argument-hint: <skill-folder> [model ...] [--drop START:END]
 disable-model-invocation: true
 ---
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 A skill's every line is a hypothesis about what the model does without it. This skill tests the hypotheses: it runs the skill's eval cases in a with-arm (skill loaded) and a baseline arm (no skill), reports the delta between them, and ablates passages to find the lines that earn their place. It drives `claude plugin eval`; `scripts/skill_eval.py` does the deterministic parts.
 
 Arguments: $ARGUMENTS — the skill folder, the models to test (default: `sonnet`), and an optional `--drop START:END` line range of `SKILL.md` to ablate.

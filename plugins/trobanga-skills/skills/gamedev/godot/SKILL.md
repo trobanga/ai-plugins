@@ -5,6 +5,8 @@ description: "Writes and reviews Godot 4 GDScript: scene architecture, signals, 
 
 # Godot 4 GDScript
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Read the engine version from `config/features` in `project.godot` (e.g. `PackedStringArray("4.4", "Forward Plus")`) before you use a version-gated feature: `TileMapLayer` needs 4.3, typed `Dictionary[K, V]` needs 4.4.
 
 ## Static typing

@@ -5,10 +5,12 @@ description: Review and remove git worktrees left behind by finished issues, und
 
 # Clean Up Issue Worktrees
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 **Goal:** Review and clean up worktrees in `.claude/worktrees/` (and the legacy `.worktrees/`
 location) that are no longer needed.
 
-This skill is the counterpart of `Skill(trobanga-skills:implement)`. The worktree location is
+This skill is the counterpart of the `implement` skill. The worktree location is
 a shared contract; changing it here requires changing it there too.
 
 **Steps:**

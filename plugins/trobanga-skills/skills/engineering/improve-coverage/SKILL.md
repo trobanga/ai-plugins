@@ -6,6 +6,8 @@ allowed-tools: Bash, Read, Glob, Workflow
 
 # Improve Code Coverage
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Improve patch coverage for the current branch with a Workflow loop. After each iteration a separate agent runs the coverage script, and the loop runs on that measured number, never on a number the test-writing agent reports.
 
 **Quality rule:** the aim is 100% patch coverage, but never at the cost of bogus tests. A bogus test executes lines without asserting behavior, asserts implementation details instead of observable behavior, or duplicates an existing test path. When only bogus tests can cover the remaining lines, stop and report those lines as not-worth-covering instead of writing the tests.

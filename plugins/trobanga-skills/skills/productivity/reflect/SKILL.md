@@ -5,6 +5,8 @@ argument-hint: "[audit | last N [log folder] | session id | .jsonl path]"
 disable-model-invocation: true
 ---
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Make the next session cheaper and safer than the last ones. Each change you propose is a **candidate**: one edit to the agent's environment, backed by evidence from the sessions or the code. Find the candidates, rank them, show them to the user, and apply only the ones the user approves.
 
 Arguments: $ARGUMENTS. If they start with `audit`, follow the [audit branch](#audit-branch). If they start with `last N`, review the N newest sessions of the project, or of the log folder that follows. Otherwise review one session: the one the arguments name by id or path, or else the current one.

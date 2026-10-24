@@ -6,6 +6,8 @@ allowed-tools: Bash, Read, Glob
 
 # CRAP score of changed functions
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
     CRAP(f) = cc(f)^2 * (1 - coverage(f))^3 + cc(f)
 
 `cc` is the cyclomatic complexity of the function, `coverage` its test

@@ -28,6 +28,9 @@ Both run through one command:
 
 `--signoff` is required for all commits in this environment.
 
+If that command does not exist, do its three steps yourself: `git commit --signoff`,
+`git push -u origin HEAD`, and `gh pr create` with a body written by the `pr` skill.
+
 The PR body carries the tracker's T5 close reference. When T5 closes through the tracker's own
 API instead (Linear, beads), the PR still names the issue id, and the T5 command runs after
 the merge.
@@ -49,7 +52,8 @@ If this fails — a PR opened from a fork may not allow it — report it and con
 ```
 
 Run it only for large or risky changes. The workflow already ran a full review before
-shipping.
+shipping. If that command does not exist, let a subagent review the diff of the PR for
+correctness bugs.
 
 ## F5 — Wait for the checks
 

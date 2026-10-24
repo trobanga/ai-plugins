@@ -3,6 +3,8 @@ name: conformance-review
 description: Review the changes since a fixed point (commit, branch, tag, or merge-base) against the project's written references, along two axes — Standards (does the code follow this repo's documented coding standards?) and Spec (does the code match what the originating issue/PRD asked for?). Runs both reviews in parallel sub-agents and reports them side by side. It does not hunt for bugs or generic code smells — use the built-in /code-review for correctness and cleanup. Use when the user wants to check a branch, a PR, or work-in-progress changes against the spec or the repo's standards.
 ---
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 
 - **Standards** — does the code conform to this repo's *documented* coding standards?

@@ -6,6 +6,8 @@ argument-hint: "<issue-id> [--pr] [--delegated]"
 
 # Implement a Tracked Issue in a New Worktree
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 The issue id comes from the skill arguments. If the user gives no id, ask for one — unless
 the tracker is `none`, where the arguments or the conversation describe the work.
 
@@ -155,7 +157,7 @@ If T1 errors, handle it per **Error Handling** below.
    BRANCH="$(python3 "${CLAUDE_SKILL_DIR}/scripts/branch_name.py" build \
      --id "$BRANCH_ID" --title "$TITLE" --format "$BRANCH_FORMAT")"
    ```
-   `Skill(trobanga-skills:worktree-cleanup)` parses the name back with the same script.
+   The `worktree-cleanup` skill parses the name back with the same script.
 
 6. **Check whether this issue already has a worktree:**
    ```bash
@@ -238,7 +240,7 @@ If T1 errors, handle it per **Error Handling** below.
     state the plan in a sentence or two and continue.
 
     Either way, the plan names the public interface changes and the ordered list of behaviors
-    to test. This is the planning step of `Skill(trobanga-skills:tdd)`, done here with the user,
+    to test. This is the planning step of the `tdd` skill, done here with the user,
     because the implementer in step 14 cannot ask the user anything.
 
 ---
@@ -247,7 +249,7 @@ If T1 errors, handle it per **Error Handling** below.
 
 14. **Implement test-first on Sonnet** (phase `implement`). Delegate the red-green-refactor loop to a
     `trobanga-skills:tdd-implementer-<effort>` agent. It runs on Sonnet and invokes
-    `Skill(trobanga-skills:tdd)` in delegated mode. You keep the design, the verification and
+    the `tdd` skill in delegated mode. You keep the design, the verification and
     the commit.
 
     **Write the brief.** The agent starts with no context, so the brief is self-contained:
@@ -290,7 +292,7 @@ If T1 errors, handle it per **Error Handling** below.
     - Wrong or incomplete work: send the specific defects with `SendMessage`. If a second
       round does not fix them, run a new agent one effort level higher.
     - A `high` run fails: take over in this session and finish the loop with
-      `Skill(trobanga-skills:tdd)` yourself. Report that you did.
+      the `tdd` skill yourself. Report that you did.
 
 15. **Simplify** (phase `simplify`) with `/simplify`, which reviews the changed code for reuse, simplification,
     efficiency and altitude and applies the fixes. It does not hunt for bugs — step 18 does.
@@ -353,8 +355,9 @@ Without `--pr`, follow Phase 5A. With `--pr`, follow Phase 5B.
 
 ### Phase 5A — Direct merge (default)
 
-19. **Commit** (phase `ship`) with `Skill(commit-commands:commit)`, passing `--signoff`. If the
-    branch already has commits, squash them into one first:
+19. **Commit** (phase `ship`) with the `commit-commands:commit` skill, passing `--signoff`. If
+    that skill does not exist, run `git commit --signoff` with a message in the style of
+    `git log`. If the branch already has commits, squash them into one first:
     `git reset --soft "$(git merge-base HEAD "origin/$DEFAULT_BRANCH")"`. The commit message
     carries what a PR body would carry: the **T5** close reference, the Assumptions, and the
     reason for each mutant that survived.
@@ -452,7 +455,7 @@ Without `--pr`, follow Phase 5A. With `--pr`, follow Phase 5B.
 
 ## Error Handling
 
-- **Tracker cannot be resolved** — ask the user, and offer `Skill(trobanga-skills:setup-project)`.
+- **Tracker cannot be resolved** — ask the user, and offer the `setup-project` skill.
 - **Tracker tool missing or unauthenticated** — report it and stop. The adapter names the
   check command for its tracker.
 - **Not a git repository** — stop; this skill has nothing to operate on.
@@ -477,7 +480,7 @@ Without `--pr`, follow Phase 5A. With `--pr`, follow Phase 5B.
 - Each issue gets an isolated environment based on a freshly-fetched default branch, leaving
   the main working directory untouched.
 - The worktree location (`.claude/worktrees/`) is a shared contract with
-  `Skill(trobanga-skills:worktree-cleanup)`. Changing it here requires changing it there too.
+  the `worktree-cleanup` skill. Changing it here requires changing it there too.
   The location is also a harness contract: `EnterWorktree` is pre-approved only for paths
   under `.claude/worktrees/`.
 - The issue (and with `--pr`, the PR) ends up claimed by you, so in-flight work is visible

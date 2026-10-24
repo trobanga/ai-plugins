@@ -6,6 +6,8 @@ disable-model-invocation: true
 
 # To Tickets
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Break a plan, spec, or conversation into a set of **tickets** — tracer-bullet vertical slices, each declaring the tickets that **block** it.
 
 Before you publish anything, resolve the project's tracker by reading `${CLAUDE_SKILL_DIR}/../implement/references/resolve-config.md`.

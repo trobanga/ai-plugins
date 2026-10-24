@@ -5,6 +5,8 @@ description: Write one issue as a newspaper article and file it on the project's
 
 # File an Issue
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Write the issue by the rules in
 `${CLAUDE_SKILL_DIR}/../draft-issue/SKILL.md`, its Gather and Write
 sections. Read that file first. Skip its Show section.

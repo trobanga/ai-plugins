@@ -5,6 +5,8 @@ description: Record which issue tracker, forge and branch format a project uses,
 
 # Set Up a Project's Tracker Configuration
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 Write down two axes and one format, so the workflow skills stop guessing.
 
 One file holds all of it:

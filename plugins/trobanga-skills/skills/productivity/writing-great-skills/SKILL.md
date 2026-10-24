@@ -4,6 +4,8 @@ description: Reference for writing, editing and reviewing skills well — the vo
 disable-model-invocation: true
 ---
 
+`${CLAUDE_SKILL_DIR}` stands for the directory of this file. If the harness does not expand it, replace it with the absolute path of that directory.
+
 A skill exists to wrangle determinism out of a stochastic system. **Predictability** — the agent taking the same _process_ every run, not producing the same output — is the root virtue; every lever below serves it.
 
 Bold terms are defined in [`GLOSSARY.md`](GLOSSARY.md); look them up there for the full meaning. [`CHECKLIST.md`](CHECKLIST.md) turns these rules, plus the platform's hard limits, into checks; read it whenever you review a skill or finish writing one. A skill you write is done when the review below finds no fail.
