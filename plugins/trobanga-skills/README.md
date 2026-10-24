@@ -1,14 +1,23 @@
 # trobanga-skills
 
-A set of Claude Code skills for engineering work, game development, and writing,
-plus one subagent. Claude loads a skill by itself when the task matches its
-description. You can also call one by name, for example `/trobanga-skills:tdd`.
+Skills for engineering work, game development, and writing, plus five
+subagents, for Claude Code and pi. The model loads a skill by itself when the
+task matches its description. You can also call one by name:
+`/trobanga-skills:tdd` in Claude Code, `/skill:tdd` in pi.
 
 ## Install
+
+Claude Code:
 
 ```
 /plugin marketplace add trobanga/ai-plugins
 /plugin install trobanga-skills@trobanga
+```
+
+pi (the subagents also need the `pi-subagents` package):
+
+```
+pi install git:github.com/trobanga/ai-plugins
 ```
 
 The plugin installs no hooks.
@@ -27,6 +36,11 @@ The plugin installs no hooks.
 | `domain-modeling` | Pins down the ubiquitous language and records architectural decisions. |
 | `implement` | Works a tracked issue in a fresh worktree: claim, explore, design, test-first, CRAP, mutants, local CI, then a fast-forward merge into the default branch, or a PR with `--pr`. GitHub, Linear or beads. |
 | `worktree-cleanup` | Removes worktrees left behind by finished issues, after it checks their state. |
+| `draft-issue` | Drafts one issue as a news article: the important part first, then the details an agent needs. Files nothing. |
+| `file-issue` | Writes one issue the same way and files it on the tracker at once. |
+| `pr` | Writes a pull request body: summary with a diagram, the change running, and risks. |
+| `show-me` | Explains the current topic with diagrams, code sketches and focused HTML pages. |
+| `reverse-engineer-anything` | Reverse engineers binaries, managed code, Electron apps, firmware and browser targets with REA. |
 | `setup-project` | Records the project's issue tracker, forge and branch format so the other skills stop guessing. |
 | `orchestrate` | Slices a locked spec into vertical slices, decides per slice whether to delegate, and merges each reviewed slice directly or through PRs. |
 | `wayfinder` | Maps work too large for one session as a set of decision tickets. |
@@ -55,6 +69,9 @@ The plugin installs no hooks.
 | `idea` | Captures an idea as a Markdown file that reads like a news article. |
 | `ste` | Switches the session to ASD-STE100 Simplified Technical English. |
 | `teach` | Teaches a concept inside this workspace, with a glossary and a learning record. |
+| `reflect` | Reviews sessions or the steering files and proposes ranked changes; applies only the approved ones. |
+| `evaluate-skill` | Measures whether a skill changes the agent's behaviour, with `claude plugin eval`. Claude Code only. |
+| `beamcast` | Writes, validates and pushes Beamcast slide decks through the Beamcast API. |
 
 ## Design
 
@@ -78,6 +95,9 @@ once.
 variant by effort, and verifies the result. The three files differ only in `effort`,
 because the `Agent` tool cannot set effort for each call.
 
+The agents are generated from `src/agents/` at the repository root: Claude Code
+reads `agents/`, pi reads `pi/agents/`. Edit the source, not the output.
+
 ## Requirements
 
 Most skills need only `git`. These need more:
@@ -95,12 +115,12 @@ Most skills need only `git`. These need more:
 >
 > — attributed to Pablo Picasso
 
-These thirteen skills are derived from
+These fourteen skills are derived from
 [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock:
 
 `conformance-review`, `domain-modeling`, `grill-with-docs`, `grilling`,
-`handoff`, `improve-codebase-architecture`, `prototype`, `research`, `tdd`,
-`teach`, `to-spec`, `to-tickets`, `wayfinder`.
+`handoff`, `improve-codebase-architecture`, `prototype`, `reflect`, `research`,
+`tdd`, `teach`, `to-spec`, `to-tickets`, `wayfinder`.
 
 They stay under his MIT licence. See
 [LICENSES/mattpocock-skills-MIT.txt](LICENSES/mattpocock-skills-MIT.txt).
@@ -109,6 +129,10 @@ They stay under his MIT licence. See
 [humanlayer/skills](https://github.com/humanlayer/skills) by Dex Horthy at
 HumanLayer. They stay under its MIT licence. See
 [LICENSES/humanlayer-skills-MIT.txt](LICENSES/humanlayer-skills-MIT.txt).
+
+`reverse-engineer-anything` is the REA skill from
+[morluto/rea](https://github.com/morluto/rea) by morluto. It stays under its MIT
+licence. See [LICENSES/rea-MIT.txt](LICENSES/rea-MIT.txt).
 
 `improve-codebase-architecture` also draws on "Design It Twice" from John
 Ousterhout, *A Philosophy of Software Design*.

@@ -1,8 +1,10 @@
-# trobanga marketplace
+# ai-plugins
 
-A [Claude Code](https://docs.claude.com/en/docs/claude-code) plugin marketplace.
-It holds two plugins: a set of engineering and gamedev skills, and a progress mod for the
-`implement` workflow.
+Skills and subagents for [Claude Code](https://docs.claude.com/en/docs/claude-code)
+and [pi](https://pi.dev). For Claude Code, the repository is a plugin marketplace
+named `trobanga`. For pi, it is a package. It holds two plugins: a set of
+engineering, gamedev and writing skills with five subagents, and a progress mod
+for the `implement` workflow.
 
 ## Install
 
@@ -26,13 +28,25 @@ The repository is also a [pi](https://pi.dev) package. It gives the skills of
 pi install git:github.com/trobanga/ai-plugins
 ```
 
-`trobanga-progress` is a Claude Code mod and does not run in pi.
+Call a skill with `/skill:<name>`, for example `/skill:tdd`. The pi version of
+each subagent is in `plugins/trobanga-skills/pi/agents/`. Do not point pi at
+`plugins/trobanga-skills/agents/`: those files name the Claude Code tools, and
+pi does not start an agent that asks for a tool it does not have.
+
+Some skills refer to files with `${CLAUDE_SKILL_DIR}`. pi does not expand it;
+each such skill tells the model to use the directory of the skill instead.
+
+These parts run in Claude Code only:
+
+- `trobanga-progress`, a Claude Code mod.
+- `evaluate-skill`, which runs `claude plugin eval`.
+- The `Workflow` loop of `improve-coverage`.
 
 ## Plugins
 
 | Plugin | Version | What it does |
 | --- | --- | --- |
-| [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 30+ skills: TDD, coverage, CRAP score, mutation testing, architecture review, Bevy, Godot, Unity, writing. |
+| [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 37 skills and 5 subagents: TDD, coverage, CRAP score, mutation testing, review, architecture, issues, Bevy, Godot, writing. |
 | [trobanga-progress](plugins/trobanga-progress) | 0.1.0 | Mod: progress bar for `implement` and a live panel of subagents. |
 
 ## Hooks and safety
