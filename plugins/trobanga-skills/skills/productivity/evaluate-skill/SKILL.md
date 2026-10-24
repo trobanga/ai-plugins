@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 A skill's every line is a hypothesis about what the model does without it. This skill tests the hypotheses: it runs the skill's eval cases in a with-arm (skill loaded) and a baseline arm (no skill), reports the delta between them, and ablates passages to find the lines that earn their place. It drives `claude plugin eval`; `scripts/skill_eval.py` does the deterministic parts.
 
-Arguments: $ARGUMENTS — the skill folder, the models to test (default: `sonnet`), and an optional `--drop START:END` line range of `SKILL.md` to ablate.
+Arguments: $ARGUMENTS. If that is not expanded, the arguments follow this text. They are the skill folder, the models to test (default: `sonnet`), and an optional `--drop START:END` line range of `SKILL.md` to ablate.
 
 Each run is a full Claude session on the user's account. Before the first run, tell the user the run count (cases × 2 arms × runs × models) and pass `--max-cost-usd` with the cap they accept.
 

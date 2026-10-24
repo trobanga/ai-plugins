@@ -1,0 +1,14 @@
+{
+  "name": "trobanga-skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The trobanga-skills skills and agents as a pi package.",
+  "keywords": ["pi-package"],
+  "license": "Apache-2.0",
+  "pi": {
+    "skills": ["./plugins/trobanga-skills/skills", "!plugins/trobanga-skills/skills/dreaming.md"]
+  },
+  "pi-subagents": {
+    "agents": ["./plugins/trobanga-skills/pi/agents"]
+  }
+}

@@ -23,6 +23,9 @@ jobs:
       - name: Check marketplace and plugin manifests agree
         run: python3 scripts/check-manifests.py
 
+      - name: Check the generated agent files are current
+        run: python3 scripts/gen_agents.py --check
+
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
 
@@ -61,6 +64,10 @@ jobs:
 
       - name: Install pytest
         run: pip install --quiet pytest
+
+      - name: Run the agent generator tests
+        working-directory: scripts
+        run: python3 -m pytest -q
 
       - name: Run the crap-score tests
         working-directory: plugins/trobanga-skills/skills/engineering/crap-score/scripts

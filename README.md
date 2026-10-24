@@ -17,6 +17,17 @@ Add the marketplace, then install the plugins you want:
 Claude Code reads the plugins from the default branch. To get updates, run
 `/plugin marketplace update trobanga`.
 
+### pi
+
+The repository is also a [pi](https://pi.dev) package. It gives the skills of
+`trobanga-skills` and, with the `pi-subagents` package, its agents:
+
+```
+pi install git:github.com/trobanga/claude-plugins
+```
+
+`trobanga-progress` is a Claude Code mod and does not run in pi.
+
 ## Plugins
 
 | Plugin | Version | What it does |
@@ -40,7 +51,10 @@ state, and they type-check and clamp their input.
 .claude-plugin/marketplace.json     the marketplace manifest
 plugins/<name>/.claude-plugin/      the plugin manifest
 plugins/<name>/skills/              skills
-plugins/<name>/agents/              subagents
+plugins/<name>/agents/              subagents (generated, see below)
+plugins/<name>/pi/agents/           the same subagents for pi (generated)
+src/agents/                         the source of each subagent
+package.json                        the pi package manifest
 plugins/<name>/hooks/hooks.json     hook registration
 plugins/<name>/scripts/             hook scripts
 ```
@@ -50,6 +64,12 @@ plugins/<name>/scripts/             hook scripts
 Open an issue or a pull request. When you change a plugin, bump the `version` in
 both `plugins/<name>/.claude-plugin/plugin.json` and the matching entry in
 `.claude-plugin/marketplace.json`. CI checks that the two agree.
+
+Edit an agent in `src/agents/`, not in `plugins/`. Then run
+`python3 scripts/gen_agents.py`, which writes the Claude Code and the pi version.
+A source uses harness-neutral tool names (`shell`, `read`, `edit`, `write`,
+`search`, `find`) and the model alias `sonnet`. CI fails when a generated file
+is out of date.
 
 ## Credits
 
