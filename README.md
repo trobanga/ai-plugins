@@ -9,7 +9,7 @@ It holds two plugins: a set of engineering and gamedev skills, and a progress mo
 Add the marketplace, then install the plugins you want:
 
 ```
-/plugin marketplace add trobanga/claude-plugins
+/plugin marketplace add trobanga/ai-plugins
 /plugin install trobanga-skills@trobanga
 /plugin install trobanga-progress@trobanga
 ```
@@ -23,7 +23,7 @@ The repository is also a [pi](https://pi.dev) package. It gives the skills of
 `trobanga-skills` and, with the `pi-subagents` package, its agents:
 
 ```
-pi install git:github.com/trobanga/claude-plugins
+pi install git:github.com/trobanga/ai-plugins
 ```
 
 `trobanga-progress` is a Claude Code mod and does not run in pi.

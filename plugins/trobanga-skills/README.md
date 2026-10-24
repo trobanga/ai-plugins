@@ -7,7 +7,7 @@ description. You can also call one by name, for example `/trobanga-skills:tdd`.
 ## Install
 
 ```
-/plugin marketplace add trobanga/claude-plugins
+/plugin marketplace add trobanga/ai-plugins
 /plugin install trobanga-skills@trobanga
 ```
 
