@@ -6,7 +6,7 @@ model: claude-sonnet-5-5
 tools: bash, read, edit, write, grep, find, ls
 skills: tdd
 thinking: medium
-extensions:
+extensions: npm:pi-claude-bridge
 ---
 
 You implement one approved plan test-first. The caller did the design, and the user approved

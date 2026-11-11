@@ -51,9 +51,10 @@ def test_claude_output_keeps_the_model_alias_and_effort():
     assert "thinking" not in out
 
 
-def test_pi_output_loads_no_ambient_extensions():
+def test_pi_output_loads_only_the_model_provider():
     out = fields(gen_agents.render(SOURCE, "pi"))
-    assert out["extensions"] == ""
+    assert out["extensions"] == "npm:pi-claude-bridge"
+    assert "subagentOnlyExtensions" not in out
 
 
 def test_claude_output_has_no_extensions_field():
