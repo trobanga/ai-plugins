@@ -9,7 +9,7 @@ Skip what the project's configured checkers report (compiler warnings, and Error
 - `try`/`finally` blocks that close a resource; use try-with-resources.
 - Helpers that a library already on the classpath has, such as Guava or Apache Commons. Do not add a new dependency for this.
 
-## Quality
+## Simplification
 
 - `catch (Exception e)` or `catch (Throwable t)` that is too broad, or a catch block that swallows the exception.
 - A checked exception rethrown as a `RuntimeException` without the cause.

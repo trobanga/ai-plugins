@@ -48,7 +48,7 @@ If this fails — a PR opened from a fork may not allow it — report it and con
 ## F4 — Review the pull request
 
 ```
-/code-review:code-review <PR_NUMBER>
+/code-review <PR_NUMBER>
 ```
 
 Run it only for large or risky changes. The workflow already ran a full review before

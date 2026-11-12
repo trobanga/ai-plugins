@@ -8,7 +8,7 @@ Skip what the compiler warnings, `mix credo` and Dialyzer report; flag only what
 - A new function that repeats one in an existing context module; call the context.
 - Hand-written validation that an `Ecto.Changeset` validator does.
 
-## Quality
+## Simplification
 
 - Nested `case` on `{:ok, _}` and `{:error, _}`; use `with`.
 - `if`/`cond` chains on the shape of data; use pattern-matching function heads.

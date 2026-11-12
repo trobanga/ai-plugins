@@ -9,7 +9,7 @@ Skip what `go vet` and `staticcheck` report; flag only what they miss.
 - Path building by string concatenation instead of `filepath.Join`.
 - A new helper next to an equal one in the same module; search the module first.
 
-## Quality
+## Simplification
 
 - Errors wrapped without `%w`, so callers cannot use `errors.Is`.
 - Errors that are ignored or only logged where the caller must know.

@@ -10,7 +10,7 @@ Skip what `cargo clippy` with its default lints reports; flag only what it misse
 - Manual impls of `Default`, `PartialEq`, `Debug`, `Clone` that `#[derive]` gives.
 - Error boilerplate that a crate already in `Cargo.toml` covers, such as `thiserror` or `anyhow`.
 
-## Quality
+## Simplification
 
 - `.clone()` that only quiets the borrow checker where a borrow or a restructured scope works.
 - Owned parameters (`String`, `Vec<T>`) for functions that only read; take `&str`, `&[T]` or `impl AsRef<_>`.

@@ -8,7 +8,7 @@ Skip what `tsc` and the project's ESLint configuration report; flag only what th
 - A type that repeats the shape of another; derive it with `Pick`, `Omit`, `Partial`, `ReturnType` or `typeof`, or with `z.infer` from an existing schema.
 - Helpers that a dependency already in `package.json` has, such as lodash. Do not add a new dependency for this.
 
-## Quality
+## Simplification
 
 - `any`, `as` casts or non-null `!` that only silence the type checker.
 - Hand-written type guards where a discriminated union lets the compiler narrow.

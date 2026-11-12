@@ -307,7 +307,8 @@ If T1 errors, handle it per **Error Handling** below.
 
 16. **Drive the CRAP score down** (phase `crap`) with the `trobanga-skills:crap-agent` agent. It measures
     every function changed against the default branch and brings each one below the threshold
-    by adding tests or extracting functions.
+    by adding tests or extracting functions. Name the base `origin/$DEFAULT_BRANCH` in its
+    brief.
 
     **This step is conditional.** The agent supports Java, Go, Rust, TypeScript, JavaScript
     and Elixir, and needs a working coverage build. Detect the language from the build file
@@ -320,7 +321,8 @@ If T1 errors, handle it per **Error Handling** below.
 
 17. **Kill surviving mutants** (phase `mutants`) with the `trobanga-skills:mutant-agent` agent. It runs the
     project's own mutation tool on the code the branch changes, and adds a test for each
-    mutant that survives and that a test can catch.
+    mutant that survives and that a test can catch. Name the base `origin/$DEFAULT_BRANCH`
+    in its brief.
 
     **This step is conditional.** The agent first checks whether the project does mutation
     testing (its `CLAUDE.md`, task runner, CI or tool configuration). If it does not, the

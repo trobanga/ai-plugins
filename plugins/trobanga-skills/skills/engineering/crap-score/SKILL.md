@@ -47,10 +47,13 @@ the coverage kind and appears in the footer of the table.
    because the coverage of a red run describes code that does not work.
    If the project's AGENTS.md or CLAUDE.md documents tests that fail
    locally, exclude exactly those from the build instead.
-2. Score the branch:
+2. Score the branch against its base. The base is the ref the user or
+   the caller names. If none is named, use the default branch of
+   `origin`:
 
+       BASE=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)
        python3 ${CLAUDE_SKILL_DIR}/scripts/crap_score.py \
-         --range origin/main...HEAD --threshold 8
+         --range "$BASE...HEAD" --threshold 8
 
    `--report` gives the report path. Only Java needs it, because the
    report lies in the module. `--lang java|go|rust|elixir|ts` overrides the
@@ -68,7 +71,7 @@ above the threshold.
   branches.
 - Needs the JaCoCo Maven plugin.
 - Build the report per changed module. The module of a file in
-  `git diff --name-only origin/main...HEAD -- '*.java'` is the nearest
+  `git diff --name-only "$BASE...HEAD" -- '*.java'` is the nearest
   directory above it that holds a `pom.xml`. For the root module, drop
   `-pl`.
 

@@ -1,6 +1,6 @@
 ---
 name: mutant-agent
-description: If the project already does mutation testing, run it on the code the current branch changes against origin/main, and kill each surviving mutant by adding a test. If the project does not do mutation testing, stop at once. Use before opening a PR, after the CRAP step of implement, or when a CI mutation check fails.
+description: If the project already does mutation testing, run it on the code the current branch changes against the default branch, and kill each surviving mutant by adding a test. If the project does not do mutation testing, stop at once. Use before opening a PR, after the CRAP step of implement, or when a CI mutation check fails.
 model: sonnet
 effort: medium
 tools: shell, read, edit, write, search, find
@@ -47,19 +47,29 @@ each.
 
 ### 2. Scope the run to the diff
 
-Mutate only the code that the branch changes. Get the changed files with
-`git diff --name-only origin/main...HEAD`, and drop test files.
+Mutate only the code that the branch changes. The base is the ref the
+brief names, for example `origin/develop`. If the brief names none, use
+the default branch of `origin`:
+
+    git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main
+
+Below, `$BASE` stands for that ref. Shell variables do not persist from
+one command to the next: set `BASE` in each command, or write the ref
+out.
+
+Get the changed files with `git diff --name-only "$BASE"...HEAD`, and
+drop test files.
 
 If the project command already limits the run to a diff, use it as it
 is. If not, add the scope option of the tool. The options that the
 tools document:
 
 - cargo-mutants: `--in-diff <file>`, with
-  `git diff origin/main...HEAD > "${TMPDIR:-/tmp}/pr.diff"`.
+  `git diff "$BASE"...HEAD > "${TMPDIR:-/tmp}/pr.diff"`.
 - PIT: `-DtargetClasses=<changed classes>`, or the `scmMutationCoverage`
   goal if the project configures it.
 - Stryker: `--mutate <changed files>`.
-- Mutare: `--since origin/main`. Add `--report json:"${TMPDIR:-/tmp}/mutare.json"`;
+- Mutare: `--since "$BASE"`. Add `--report json:"${TMPDIR:-/tmp}/mutare.json"`;
   step 4 reads the survivors from it.
 
 For another tool, read its `--help` and use its diff or file filter. If
@@ -116,7 +126,7 @@ an hour, and the mutants it caught stay caught.
          | select(.status == "Survived")
          | "--line=\($f):\(.position.line // .location.start.line)"' \
      "${TMPDIR:-/tmp}/mutare.json" | sort -u > "${TMPDIR:-/tmp}/survivors.args"
-  mix mutare --since origin/main $(cat "${TMPDIR:-/tmp}/survivors.args") \
+  mix mutare --since "$BASE" $(cat "${TMPDIR:-/tmp}/survivors.args") \
     --report json:"${TMPDIR:-/tmp}/mutare.json"
   ```
 
