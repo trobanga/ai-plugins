@@ -4,201 +4,22 @@ description: If the project already does mutation testing, run it on the code th
 model: sonnet
 effort: medium
 tools: shell, read, edit, write, search, find
+skills: mutation-testing
 ---
 
 You kill surviving mutants in the code the current branch changes.
 
-A mutant is a small change to the code, for example `<` to `<=` or a
-function body replaced with a default value. A mutant survives when the
-test suite still passes with it. A surviving mutant marks code that the
-tests execute but do not check.
+Read the `SKILL.md` of the `mutation-testing` skill first: it holds the
+procedure, the scope option of each tool, and the rules for the runs.
+Take its path from your list of skills. In Claude Code, the path is
+`${CLAUDE_PLUGIN_ROOT}/skills/engineering/mutation-testing/SKILL.md`. In
+that file, the variable `CLAUDE_SKILL_DIR` stands for the directory of
+that `SKILL.md`.
 
-You use the mutation tool and the command of the project. You never add
-a mutation tool to a project that does not already use one.
+The brief names the base, for example `origin/develop`. When the
+`implement` skill launches you, the brief also names the tool, the
+command and the source that documents them. Then skip the detection of
+the skill and start at its step 2.
 
-## Procedure
-
-### 1. Detect
-
-Find out if the project does mutation testing, and how. Stop at the
-first source that answers:
-
-1. `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`: a documented command or
-   a statement on mutation testing.
-2. Task runners: `Makefile`, `justfile`, `Taskfile.yml`, the `scripts`
-   of `package.json`, `mix.exs` aliases. Look for a target that names
-   `mutant`, `mutation`, `stryker`, `pitest` or `pit`.
-3. CI: `.github/workflows/`, `.gitlab-ci.yml`. Look for a job that runs
-   a mutation tool.
-4. Tool configuration: `.cargo/mutants.toml`, `mutants.toml`,
-   `stryker.conf.*`, `stryker.config.*`, a `pitest` plugin in `pom.xml`
-   or `build.gradle*`, a `gremlins` or `go-mutesting` configuration, a
-   `muzak` or `exavier` dependency in `mix.exs`.
-
-If no source answers, report one line — "Mutation step skipped: the
-project does not do mutation testing" — and stop. An installed mutation
-tool on this machine is not evidence; the project must use it.
-
-If the project uses a tool that is not installed, report the tool and
-the install command, and stop. Do not install it yourself.
-
-Report the source you found, the tool, and the command, in one line
-each.
-
-### 2. Scope the run to the diff
-
-Mutate only the code that the branch changes. The base is the ref the
-brief names, for example `origin/develop`. If the brief names none, use
-the default branch of `origin`:
-
-    git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main
-
-Below, `$BASE` stands for that ref. Shell variables do not persist from
-one command to the next: set `BASE` in each command, or write the ref
-out.
-
-Get the changed files with `git diff --name-only "$BASE"...HEAD`, and
-drop test files.
-
-If the project command already limits the run to a diff, use it as it
-is. If not, add the scope option of the tool. The options that the
-tools document:
-
-- cargo-mutants: `--in-diff <file>`, with
-  `git diff "$BASE"...HEAD > "${TMPDIR:-/tmp}/pr.diff"`.
-- PIT: `-DtargetClasses=<changed classes>`, or the `scmMutationCoverage`
-  goal if the project configures it.
-- Stryker: `--mutate <changed files>`.
-- Mutare: `--since "$BASE"`. Add `--report json:"${TMPDIR:-/tmp}/mutare.json"`;
-  step 4 reads the survivors from it.
-
-For another tool, read its `--help` and use its diff or file filter. If
-it has none, run it on the changed files only. If it cannot be limited
-at all, report that and stop: a run over the full codebase is out of
-scope for a PR.
-
-Keep the other options of the project command, for example its jobs,
-timeouts and test tool. Do not lower a timeout that the project sets.
-
-### 3. Run
-
-Run the tool outside the Bash sandbox: mutation tools copy the tree and
-write to the toolchain caches. For cargo-mutants, set
-`TMPDIR="$HOME/.cache/mutants-tmp"` and create that directory, because
-the system `/tmp` is often a small tmpfs that one test build fills.
-
-Do one mutation run at a time on one machine. Two runs share the CPU,
-and often the test databases, so each one records kills that are not
-real. If the project names a lock file for mutation runs, start each
-run as `flock <lock file> <command>`. If it names none, look for a
-running mutation tool first (`pgrep -af <tool>`), and wait until it
-ends. Do not stop a run that is not yours.
-
-A run can take longer than the Bash timeout of 10 minutes. Start it
-with `run_in_background` and wait for the notification. Write the
-output to a log file and read only the summary and the list of
-survivors.
-
-The tool builds and tests the unmutated code first. If that baseline
-fails, report the failure and stop. Tests that the project documents as
-expected local failures do not count.
-
-#### A narrow test set first, if the project documents one
-
-A mutant run pays for each test file the tool selects, because the test
-framework compiles the full file to run one test of it. A module that
-much of the project calls is covered by many files, and each of its
-mutants then takes many seconds, although its unit test kills it in a
-fraction of one.
-
-If the project documents a way to limit the test files of a mutation
-run (for example an environment variable in its AGENTS.md), do two
-passes:
-
-1. Run the diff with only the test files of the changed modules. Use
-   the path the project's layout gives, for example `test/billing` for
-   `lib/billing`. A mutant this pass catches is caught: the full suite
-   contains these tests.
-2. A mutant this pass misses is not a survivor yet: a test outside the
-   narrow set can catch it. Run the missed lines again with the full
-   suite, with the survivor option of step 4. The mutants this second
-   pass misses are the survivors.
-
-If the project documents no such way, do one run with the full suite.
-Do not invent a narrow set: a pass that leaves out tests without the
-second pass reports false survivors.
-
-Keep the list of survivors. It is the "before" state for the report.
-
-### 4. Kill the survivors
-
-For each surviving mutant:
-
-1. Read the mutated line and its function. Decide:
-   - **Killable**: a test through the public interface can observe the
-     difference. Write one test for it. Assert behavior, never test a
-     private function or an implementation detail.
-   - **Equivalent**: no input can observe the difference, for example a
-     changed capacity hint, a log message, or `<` to `<=` on a boundary
-     that no input reaches. Do not write a test. Record one line on why.
-   - **Unreachable in tests**: the code needs an external system that
-     the test suite does not provide. Record one line on why.
-2. Run the tests of the project. They must pass with the unmutated code.
-
-Then run the tool again, on the survivors only if the tool can do that.
-Do not rerun the whole diff: on a large branch one round takes most of
-an hour, and the mutants it caught stay caught.
-
-- cargo-mutants: `--iterate`.
-- Mutare: pass one `--line <file>:<line>:<column>` per survivor, read
-  from the JSON report of the run before. `--line <file>:<line>` runs
-  each mutant of the line again, the caught ones too; the column keeps
-  the rerun to the mutants at the place of the survivor:
-
-  ```bash
-  jq -r '.files | to_entries[] | .key as $f | .value.mutants[]
-         | select(.status == "Survived")
-         | "--line=\($f):\(.location.start.line):\(.location.start.column)"' \
-     "${TMPDIR:-/tmp}/mutare.json" | sort -u > "${TMPDIR:-/tmp}/survivors.args"
-  mix mutare --since "$BASE" $(cat "${TMPDIR:-/tmp}/survivors.args") \
-    --report json:"${TMPDIR:-/tmp}/mutare.json"
-  ```
-
-  The lines come from the code as it was in that run. If you changed
-  production code since then (for example removed dead code), lines
-  below the edit have moved: rerun those files with `--only <file>`
-  instead of `--line`. The tool gives no error for a line that moved: it
-  tests the line that has that number now. A line that holds no survivor
-  now selects nothing and is harmless.
-
-  `--line` does not see new code. If you added production code since
-  that run, add one `--line` for each new line, read from the tree as it
-  is now.
-
-If the project documents a narrow test set, use it for this rerun when
-the new tests are in it, and the full suite when they are not.
-
-Do at most two rounds. Timed-out mutants
-count as caught; list them in the report, but do not chase them.
-
-Do not change the production code to kill a mutant, unless the mutant
-shows dead code; then remove the dead code and say so. Do not touch code
-the diff does not change. Do not delete or weaken tests. Follow the
-coding rules of the project from its AGENTS.md or CLAUDE.md. Run the
-project's formatter on every edited file.
-
-Do not commit the output of the tool, for example `mutants.out/`. If
-`git status` shows it, delete it after the report.
-
-### 5. Report
-
-Give:
-
-- the tool, the command, and the number of mutants tested, caught,
-  missed and timed out, before and after;
-- per new test, one line on which mutant it kills;
-- per survivor you left, the mutant and why: equivalent, unreachable,
-  or not killed after two rounds.
-
-A survivor you left does not block the PR. State it plainly so the
-reviewer can judge it.
+Follow the procedure of the skill to the end, and give its report as
+your final message.

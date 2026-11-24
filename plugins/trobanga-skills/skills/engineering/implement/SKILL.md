@@ -275,7 +275,9 @@ If T1 errors, handle it per **Error Handling** below.
     raise the effort; go back to step 13.
 
     **Report the plan** to the progress bar (see **Progress bar** above) with `tasks`: the
-    implementer, then `crap-agent` and `mutant-agent` when their steps will run.
+    implementer, then `crap-agent` and `mutant-agent` when their steps will run. To know
+    that, do the checks of steps 16 and 17 now: the build file, and the detection of
+    mutation testing. Keep the results for those steps.
 
     **Launch** the agent in the foreground, because step 15 needs its result:
     ```
@@ -321,15 +323,20 @@ If T1 errors, handle it per **Error Handling** below.
 
 17. **Kill surviving mutants** (phase `mutants`) with the `trobanga-skills:mutant-agent` agent. It runs the
     project's own mutation tool on the code the branch changes, and adds a test for each
-    mutant that survives and that a test can catch. Name the base `origin/$DEFAULT_BRANCH`
-    in its brief.
+    mutant that survives and that a test can catch.
 
-    **This step is conditional.** The agent first checks whether the project does mutation
-    testing (its `CLAUDE.md`, task runner, CI or tool configuration). If it does not, the
-    agent reports one line — "Mutation step skipped: the project does not do mutation
-    testing" — and you continue. A mutant the agent leaves alive does not block shipping:
-    carry its reason into the commit message (direct merge) or the PR body (`--pr`), so a
-    reader can judge it.
+    **This step is conditional.** Detect in this session, so that you do not launch an agent
+    that stops at once. If step 14 already did the detection, use its result. If not, follow
+    `${CLAUDE_SKILL_DIR}/../mutation-testing/references/detect.md`. It checks the project's
+    `CLAUDE.md`, task runner, CI and tool configuration. If it finds no source, report one
+    line — "Mutation step skipped: the project does not do mutation testing" — and continue.
+    If the tool is not installed, report the tool and its install command in one line, and
+    continue. Do not install the tool.
+
+    If detection finds the tool, launch the agent. Its brief names the base
+    `origin/$DEFAULT_BRANCH`, the tool, the command, and the source that documents them.
+    A mutant the agent leaves alive does not block shipping: carry its reason into the
+    commit message (direct merge) or the PR body (`--pr`), so a reader can judge it.
 
     It runs after the CRAP step, because the tests that step adds already kill some mutants,
     and before the review, so the reviewers see the tests it wrote.

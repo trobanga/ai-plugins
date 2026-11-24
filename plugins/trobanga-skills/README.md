@@ -30,6 +30,7 @@ The plugin installs no hooks.
 | `patch-coverage` | Measures coverage of the branch diff with diff-cover. Java, Go, Rust, Elixir. Measures only. |
 | `improve-coverage` | Raises patch coverage toward a target by writing real tests, file by file. |
 | `crap-score` | Computes the CRAP score (complexity against coverage) of every changed function. Measures only. |
+| `mutation-testing` | Runs the project's own mutation tool on the branch diff and adds a test for each surviving mutant. Stops if the project does no mutation testing. |
 | `simplify` | Reviews changed code for reuse, quality and efficiency with three parallel reviewers, then fixes the findings. |
 | `conformance-review` | Reviews a branch against the repo's coding standards and against the originating issue. |
 | `improve-codebase-architecture` | Finds deepening opportunities, guided by `GLOSSARY.md` and the ADRs. |
@@ -85,10 +86,9 @@ The plugin installs no hooks.
 each one below the threshold, by adding tests or by extracting functions. It
 supports Java, Go, Rust, TypeScript, and Elixir.
 
-`mutant-agent` checks whether the project does mutation testing. If it does, the
-agent runs the project's own mutation tool on the changed code and adds a test for
-each surviving mutant that a test can catch. If it does not, the agent stops at
-once.
+`mutant-agent` runs the `mutation-testing` skill in a subagent on Sonnet, so the
+long mutation runs stay out of the caller's context. `implement` detects mutation
+testing itself and launches the agent only when the project does it.
 
 `tdd-implementer-low`, `tdd-implementer-medium` and `tdd-implementer-high` run the
 `tdd` loop on Sonnet for an approved plan. `implement` writes the brief, selects the
