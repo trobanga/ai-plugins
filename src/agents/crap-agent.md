@@ -1,6 +1,6 @@
 ---
 name: crap-agent
-description: Compute the CRAP score of every function changed on the current branch against the default branch, in Java, Go, Rust, TypeScript or Elixir, and bring each function below the threshold by adding tests or extracting functions. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
+description: Compute the CRAP score of every function changed on the current branch against the default branch, in Java, Kotlin, Go, Rust, TypeScript or Elixir, and bring each function below the threshold by adding tests or extracting functions. Use before opening a PR, after a feature is complete, or when a CI CRAP check fails.
 model: sonnet
 effort: medium
 tools: shell, read, edit, write, search, find
@@ -29,7 +29,7 @@ brief names none, use the default branch of `origin`:
 Score the range `<base>...HEAD`: in the commands of the `crap-score`
 skill, set `BASE` to this ref.
 
-Supported: Java, Go, Rust, TypeScript, JavaScript and Elixir.
+Supported: Java, Kotlin, Go, Rust, TypeScript, JavaScript and Elixir.
 
 ## Procedure
 
@@ -38,6 +38,8 @@ Supported: Java, Go, Rust, TypeScript, JavaScript and Elixir.
 Follow the Instructions of the crap-score skill: build fresh coverage,
 then score with `--threshold` set. With Elixir, ExCoveralls must be a
 dependency of the project; if it is not, stop and say so, do not add it
+yourself. With Kotlin on Gradle, the build must apply the JaCoCo plugin
+with the XML report on; if it does not, stop and say so, do not add it
 yourself. If the script refuses a stale report, build again.
 
 Keep the first table. It is the "before" state for the final report.
@@ -66,6 +68,13 @@ Per language, the paths that stay untested longest:
   `Optional`, the error signal of a reactive chain, every `catch`.
   Extract into a private method; a stream or an `Optional` chain often
   removes the branch instead of hiding it.
+- **Kotlin**: the `null` side of `?.` and `?:`, the `else` and every other
+  arm of a `when`, the second operand of `&&` and `||`, every `catch`.
+  Extract the arms of a long `when` into functions. A scope function
+  such as `?.let` keeps the null check, so it moves the branch and does
+  not remove it. An `inline` function at or above the threshold cannot
+  be fixed with tests, because each caller runs a copy of its body:
+  report it after the first round and do not repeat.
 - **Go**: every `if err != nil`. A table-driven test with one row per
   case covers them without new test functions. Extract a helper function
   for a long `switch`. Go counts statements, so a branch whose body is

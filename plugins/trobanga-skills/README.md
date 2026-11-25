@@ -84,7 +84,7 @@ The plugin installs no hooks.
 
 `crap-agent` computes the CRAP score of every changed function and then brings
 each one below the threshold, by adding tests or by extracting functions. It
-supports Java, Go, Rust, TypeScript, and Elixir.
+supports Java, Kotlin, Go, Rust, TypeScript, and Elixir.
 
 `mutant-agent` runs the `mutation-testing` skill in a subagent on Sonnet, so the
 long mutation runs stay out of the caller's context. `implement` detects mutation

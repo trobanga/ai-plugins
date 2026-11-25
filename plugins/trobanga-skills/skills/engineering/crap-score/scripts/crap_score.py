@@ -1,4 +1,4 @@
-"""CRAP score of the functions a diff touches, for one of five languages.
+"""CRAP score of the functions a diff touches, for one of six languages.
 
     CRAP(f) = cc(f)^2 * (1 - coverage(f))^3 + cc(f)
 
@@ -15,44 +15,50 @@ from collections import namedtuple
 
 import crap_core
 
-Language = namedtuple("Language", "marker module report sources coverage")
+Language = namedtuple("Language", "markers module report sources coverage")
 
 LANGUAGES = {
     "java": Language(
-        marker="pom.xml", module="collect_java",
+        markers=["pom.xml"], module="collect_java",
         report="target/site/jacoco/jacoco.xml",
-        sources=["*.java"], coverage="branch"),
+        sources=["*.java", "*.kt"], coverage="branch"),
+    "kotlin": Language(
+        markers=["build.gradle.kts", "build.gradle"], module="collect_java",
+        report="build/reports/jacoco/test/jacocoTestReport.xml",
+        sources=["*.kt", "*.java"], coverage="branch"),
     "go": Language(
-        marker="go.mod", module="collect_go",
+        markers=["go.mod"], module="collect_go",
         report="coverage.out",
         sources=["*.go"], coverage="statement"),
     "rust": Language(
-        marker="Cargo.toml", module="collect_rust",
+        markers=["Cargo.toml"], module="collect_rust",
         report="lcov.info",
         sources=["*.rs"], coverage="line"),
     "elixir": Language(
-        marker="mix.exs", module="collect_elixir",
+        markers=["mix.exs"], module="collect_elixir",
         report="cover/lcov.info",
         sources=["*.ex", "*.exs"], coverage="line"),
     "ts": Language(
-        marker="package.json", module="collect_ts",
+        markers=["package.json"], module="collect_ts",
         report="coverage/coverage-final.json",
         sources=["*.ts", "*.tsx", "*.js", "*.jsx"], coverage="branch"),
 }
 
 # a Go or Java repository often ships a package.json for its frontend, so
 # the backend markers are tested first
-ORDER = ["java", "go", "rust", "elixir", "ts"]
+ORDER = ["java", "kotlin", "go", "rust", "elixir", "ts"]
 
 
 def detect(root="."):
     """Name the language of the project in `root`, from its build file."""
     import os
     for lang in ORDER:
-        if os.path.exists(os.path.join(root, LANGUAGES[lang].marker)):
+        if any(os.path.exists(os.path.join(root, marker))
+               for marker in LANGUAGES[lang].markers):
             return lang
     raise SystemExit(
-        "no pom.xml, go.mod, Cargo.toml, mix.exs or package.json found; "
+        "no pom.xml, build.gradle(.kts), go.mod, Cargo.toml, mix.exs or "
+        "package.json found; "
         "give --lang explicitly")
 
 
@@ -77,7 +83,7 @@ def cli(argv=None):
     src.add_argument("--range", help="git revision range, e.g. origin/main...HEAD")
     p.add_argument("--threshold", type=float, default=8)
     p.add_argument("--include-lambdas", action="store_true",
-                   help="Java only: score lambdas as their own methods")
+                   help="Java and Kotlin only: score lambdas as their own methods")
     a = p.parse_args(argv)
 
     lang = a.lang or detect()

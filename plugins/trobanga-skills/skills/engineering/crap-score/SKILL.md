@@ -1,6 +1,6 @@
 ---
 name: crap-score
-description: Compute the CRAP score (Change Risk Anti-Patterns) of every function changed on the current branch, from a coverage report and a git diff, and fail above a threshold. Supports Java, Go, Rust, TypeScript and Elixir. Measures only and writes no tests. Use when the user asks for a CRAP score, a complexity-times-coverage check, or which changed functions are risky. To fix the violations, use the crap-agent.
+description: Compute the CRAP score (Change Risk Anti-Patterns) of every function changed on the current branch, from a coverage report and a git diff, and fail above a threshold. Supports Java, Kotlin, Go, Rust, TypeScript and Elixir. Measures only and writes no tests. Use when the user asks for a CRAP score, a complexity-times-coverage check, or which changed functions are risky. To fix the violations, use the crap-agent.
 allowed-tools: Bash, Read, Glob
 ---
 
@@ -55,9 +55,9 @@ the coverage kind and appears in the footer of the table.
        python3 ${CLAUDE_SKILL_DIR}/scripts/crap_score.py \
          --range "$BASE...HEAD" --threshold 8
 
-   `--report` gives the report path. Only Java needs it, because the
-   report lies in the module. `--lang java|go|rust|elixir|ts` overrides the
-   detected project type.
+   `--report` gives the report path. Only Java and Kotlin need it,
+   because the report lies in the module. `--lang
+   java|kotlin|go|rust|elixir|ts` overrides the detected project type.
    `--diff FILE` or `--diff -` takes a unified diff instead of a range.
    With `--range`, the script fails when the report is older than a
    changed source file. Rebuild the report then.
@@ -68,10 +68,11 @@ above the threshold.
 ## Java
 
 - Detected by `pom.xml`. Coverage: **branch**, line for methods without
-  branches.
+  branches. The diff also takes `*.kt`, so a Kotlin module on Maven is
+  scored here; the Kotlin rules below apply to it.
 - Needs the JaCoCo Maven plugin.
 - Build the report per changed module. The module of a file in
-  `git diff --name-only "$BASE...HEAD" -- '*.java'` is the nearest
+  `git diff --name-only "$BASE...HEAD" -- '*.java' '*.kt'` is the nearest
   directory above it that holds a `pom.xml`. For the root module, drop
   `-pl`.
 
@@ -80,13 +81,74 @@ above the threshold.
 
 - Report: `<m>/target/site/jacoco/jacoco.xml`. Give it with `--report`,
   and score each module in a run of its own.
-- Lambdas are excluded. `--include-lambdas` scores them as own methods.
+- Lambdas and the methods of anonymous classes (`Foo$1`) are excluded.
+  `--include-lambdas` scores them as own methods.
 - JaCoCo gives only the first code line of a method. A method ends where
   the next method of the same source file starts, across inner classes.
   An edit above the first code line (annotation, signature, Javadoc)
-  therefore maps to the preceding method.
+  therefore maps to the preceding method. Methods with the same first
+  line share one range.
 - Verified on a Maven project with JaCoCo 0.8.15: a method with four
   `if` statements and 5 of 8 branches covered scores 6.3 at cc 5.
+
+## Kotlin
+
+- Detected by `build.gradle.kts` or `build.gradle`. Coverage: **branch**,
+  line for functions without branches. The collector is the one of Java;
+  this entry also scores the changed `*.java` files of a Gradle build.
+- Needs the JaCoCo plugin of Gradle. Gradle writes no XML report by
+  default, so turn it on:
+
+      // build.gradle.kts
+      plugins { jacoco }
+      tasks.jacocoTestReport { reports { xml.required = true } }
+
+- Build the report per changed module, from the repository root. The
+  module of a file in `git diff --name-only "$BASE...HEAD" -- '*.kt'
+  '*.java'` is the nearest directory above it that holds a
+  `build.gradle.kts` or `build.gradle`. For a single-module build, drop
+  the `:<m>` prefix and the `<m>/` of the report path.
+
+      ./gradlew :<m>:test :<m>:jacocoTestReport
+
+- Report: `<m>/build/reports/jacoco/test/jacocoTestReport.xml`. Give it
+  with `--report`, score each module in a run of its own, and run the
+  script from the repository root.
+- Kover is not verified. Use the JaCoCo plugin.
+- A top-level function belongs to the class of its file:
+  `a/b/FooKt.bar`. A function of a companion object is
+  `a/b/Foo$Companion.bar`.
+- Kotlin lets the directory of a file differ from its package. JaCoCo
+  names the file by its package, so the collector reads the `package`
+  line of every `*.kt` file that `git ls-files` lists, and gives the
+  record the real path. If two files have the same package and the same
+  name, the record keeps the path of JaCoCo and may match no diff line.
+- A function with default arguments has a wrapper `bar$default` that
+  starts at the signature line. The collector merges it into `bar`, so
+  an edit of a default value maps to `bar`.
+- Lambdas (`bar$lambda$0`) and the methods of anonymous objects
+  (`FooKt$bar$1`) are excluded, as in Java. Their branches do not count
+  for the function around them, so an edit in the body of a
+  `launch { }`, a callback or an `object :` is scored only through the
+  rest of that function. The lambda of an `inline` function such as
+  `map` or `let` is copied into its caller and counts there. A local
+  function `bar$helper` keeps a record of its own.
+- The constructor of a data class and the getters of its properties
+  have the same first line and share one range. JaCoCo filters the
+  generated `equals`, `hashCode`, `toString`, `copy` and `componentN`.
+- The complexity comes from the bytecode: `?.`, `?:`, `&&`, `||` and
+  each arm of `when` are decisions.
+- A caller of an `inline` function runs a copy of its body, so no test
+  covers the body itself. JaCoCo 0.8.12 reports it as uncovered at its
+  full complexity; JaCoCo 0.8.15 reports cc 1. Tests cannot fix it.
+- A `suspend` function keeps one record. JaCoCo filters its state
+  machine.
+- Verified with Kotlin 2.1.0, on Maven with JaCoCo 0.8.12 and 0.8.15
+  and on Gradle 9.9.2 with JaCoCo 0.8.15: a function with
+  `if (x > 0 && y > 0)` and 2 of 4 branches covered scores 4.1 at
+  cc 3, on all three builds. A `--range` run with the commands above
+  scored a changed function on Maven (detected) and in a Gradle
+  subproject.
 
 ## Go
 

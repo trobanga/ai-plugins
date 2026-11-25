@@ -312,9 +312,10 @@ If T1 errors, handle it per **Error Handling** below.
     by adding tests or extracting functions. Name the base `origin/$DEFAULT_BRANCH` in its
     brief.
 
-    **This step is conditional.** The agent supports Java, Go, Rust, TypeScript, JavaScript
-    and Elixir, and needs a working coverage build. Detect the language from the build file
-    (`pom.xml`, `go.mod`, `Cargo.toml`, `mix.exs`, `package.json`). If none matches, or the
+    **This step is conditional.** The agent supports Java, Kotlin, Go, Rust, TypeScript,
+    JavaScript and Elixir, and needs a working coverage build. Detect the language from the
+    build file (`pom.xml`, `build.gradle.kts`, `build.gradle`, `go.mod`, `Cargo.toml`,
+    `mix.exs`, `package.json`). If none matches, or the
     coverage build fails, report one line — "CRAP step skipped: no supported build file" —
     and continue. Do not block shipping on it.
 

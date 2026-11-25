@@ -135,6 +135,91 @@ class ScoredWithCoreTest(unittest.TestCase):
                          [r[0] for r in rows])
 
 
+class AnonymousClassTest(unittest.TestCase):
+    """The shapes that javac 17 and JaCoCo 0.8.15 write for this source:
+
+     4      public int schedule(int n) {
+     5          int m = n * 2;
+     6          Runnable r = new Runnable() {
+     7              public void run() {
+     8                  if (m > 0) System.out.print("");
+     9              }
+    10          };
+    11          r.run();
+    12          if (m > 5) return 1;
+    13          return 0;
+    14      }
+    15
+    16      public int one() { return 1; } public int two() { return 2; }
+    17
+    18      public int other(int k) {
+    """
+
+    REPORT = dedent("""\
+        <?xml version="1.0" encoding="UTF-8"?>
+        <report name="probe">
+          <package name="a/b">
+            <class name="a/b/Sched$1" sourcefilename="Sched.java">
+              <method name="&lt;init&gt;" desc="(La/b/Sched;I)V" line="6">
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+              </method>
+              <method name="run" desc="()V" line="8">
+                <counter type="BRANCH" missed="1" covered="1"/>
+                <counter type="LINE" missed="0" covered="2"/>
+                <counter type="COMPLEXITY" missed="1" covered="1"/>
+              </method>
+            </class>
+            <class name="a/b/Sched" sourcefilename="Sched.java">
+              <method name="schedule" desc="(I)I" line="5">
+                <counter type="BRANCH" missed="1" covered="1"/>
+                <counter type="LINE" missed="1" covered="4"/>
+                <counter type="COMPLEXITY" missed="1" covered="1"/>
+              </method>
+              <method name="one" desc="()I" line="16">
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+              </method>
+              <method name="two" desc="()I" line="16">
+                <counter type="LINE" missed="1" covered="0"/>
+                <counter type="COMPLEXITY" missed="1" covered="0"/>
+              </method>
+              <method name="other" desc="(I)I" line="19">
+                <counter type="BRANCH" missed="1" covered="1"/>
+                <counter type="LINE" missed="1" covered="1"/>
+                <counter type="COMPLEXITY" missed="1" covered="1"/>
+              </method>
+            </class>
+          </package>
+        </report>
+        """)
+
+    def records(self, include_lambdas=False):
+        return list(collect_java.records(io.StringIO(self.REPORT),
+                                         include_lambdas))
+
+    def scored(self, line):
+        diff = ("--- a/src/main/java/a/b/Sched.java\n"
+                "+++ b/src/main/java/a/b/Sched.java\n"
+                f"@@ -{line},1 +{line},1 @@\n-old\n+new\n")
+        return [r[0] for r in crap_core.score(self.records(), io.StringIO(diff))]
+
+    def test_an_edit_after_an_anonymous_class_scores_the_method_around_it(self):
+        self.assertEqual(["a/b/Sched.schedule"], self.scored(12))
+
+    def test_an_anonymous_class_is_excluded_by_default(self):
+        names = [r["name"] for r in self.records()]
+        self.assertNotIn("a/b/Sched$1.run", names)
+
+    def test_an_anonymous_class_can_be_included(self):
+        names = [r["name"] for r in self.records(include_lambdas=True)]
+        self.assertIn("a/b/Sched$1.run", names)
+
+    def test_methods_on_one_line_are_all_scored(self):
+        self.assertEqual(["a/b/Sched.one", "a/b/Sched.two"],
+                         sorted(self.scored(16)))
+
+
 class StaleReportTest(unittest.TestCase):
 
     def setUp(self):
