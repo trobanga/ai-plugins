@@ -215,6 +215,17 @@ class AnonymousClassTest(unittest.TestCase):
         names = [r["name"] for r in self.records(include_lambdas=True)]
         self.assertIn("a/b/Sched$1.run", names)
 
+    def test_the_anonymous_class_counts_for_the_method_around_it(self):
+        schedule = {r["name"]: r for r in self.records()}["a/b/Sched.schedule"]
+        # schedule cc 2 + run cc 2 + <init> cc 1, one decision each but <init>
+        self.assertEqual(3, schedule["cc"])
+        # 1 of 2 branches in schedule, 1 of 2 in run
+        self.assertEqual(0.5, schedule["coverage"])
+
+    def test_an_included_anonymous_class_is_not_counted_twice(self):
+        records = {r["name"]: r for r in self.records(include_lambdas=True)}
+        self.assertEqual(2, records["a/b/Sched.schedule"]["cc"])
+
     def test_methods_on_one_line_are_all_scored(self):
         self.assertEqual(["a/b/Sched.one", "a/b/Sched.two"],
                          sorted(self.scored(16)))

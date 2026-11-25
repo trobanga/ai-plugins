@@ -92,6 +92,12 @@ class KotlinLambdaTest(unittest.TestCase):
     def test_a_kotlin_lambda_does_not_cut_the_function_around_it(self):
         self.assertEqual(10, by_name(collect())["keepsLambda"]["end"])
 
+    def test_the_branches_of_a_lambda_count_for_the_function_around_it(self):
+        keeps = by_name(collect())["keepsLambda"]
+        # keepsLambda: cc 1, no branch; its lambda: cc 2, 1 of 2 branches
+        self.assertEqual((2, 0.5, "branch"),
+                         (keeps["cc"], keeps["coverage"], keeps["kind"]))
+
     def test_an_anonymous_object_does_not_cut_the_function_around_it(self):
         self.assertEqual(27, by_name(collect())["anonObject"]["end"])
 

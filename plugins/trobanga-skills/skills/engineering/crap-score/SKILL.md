@@ -81,8 +81,12 @@ above the threshold.
 
 - Report: `<m>/target/site/jacoco/jacoco.xml`. Give it with `--report`,
   and score each module in a run of its own.
-- Lambdas and the methods of anonymous classes (`Foo$1`) are excluded.
-  `--include-lambdas` scores them as own methods.
+- Lambdas and the methods of anonymous classes (`Foo$1`) keep no record
+  of their own. Their decisions (cc - 1), branches and lines count for
+  the method whose range holds their first line. A lambda in a field
+  initializer above the first method counts for no method.
+  `--include-lambdas` scores them as own methods instead, and does not
+  add them to the method around them.
 - JaCoCo gives only the first code line of a method. A method ends where
   the next method of the same source file starts, across inner classes.
   An edit above the first code line (annotation, signature, Javadoc)
@@ -126,13 +130,13 @@ above the threshold.
 - A function with default arguments has a wrapper `bar$default` that
   starts at the signature line. The collector merges it into `bar`, so
   an edit of a default value maps to `bar`.
-- Lambdas (`bar$lambda$0`) and the methods of anonymous objects
-  (`FooKt$bar$1`) are excluded, as in Java. Their branches do not count
-  for the function around them, so an edit in the body of a
-  `launch { }`, a callback or an `object :` is scored only through the
-  rest of that function. The lambda of an `inline` function such as
-  `map` or `let` is copied into its caller and counts there. A local
-  function `bar$helper` keeps a record of its own.
+- Lambdas (`bar$lambda$0`), the methods of anonymous objects and the
+  classes of suspend lambdas (`FooKt$bar$1`) count for the function
+  around them, as in Java. The body of a `launch { }`, a callback or an
+  `object :` therefore raises the score of that function. The lambda of
+  an `inline` function such as `map` or `let` is copied into its caller
+  and counts there anyway. A local function `bar$helper` keeps a record
+  of its own.
 - The constructor of a data class and the getters of its properties
   have the same first line and share one range. JaCoCo filters the
   generated `equals`, `hashCode`, `toString`, `copy` and `componentN`.
@@ -146,7 +150,9 @@ above the threshold.
 - Verified with Kotlin 2.1.0, on Maven with JaCoCo 0.8.12 and 0.8.15
   and on Gradle 9.9.2 with JaCoCo 0.8.15: a function with
   `if (x > 0 && y > 0)` and 2 of 4 branches covered scores 4.1 at
-  cc 3, on all three builds. A `--range` run with the commands above
+  cc 3, on all three builds. A function with one `launch { if ... }` and
+  1 of 2 branches covered scores 2.5 at cc 2 (Maven, JaCoCo 0.8.15).
+  A `--range` run with the commands above
   scored a changed function on Maven (detected) and in a Gradle
   subproject.
 

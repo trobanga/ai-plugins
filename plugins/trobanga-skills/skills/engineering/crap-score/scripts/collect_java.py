@@ -3,7 +3,8 @@
 JaCoCo gives the first code line of a method and no end line. A method
 ends where the next method of the same source file starts, across inner
 classes. The last method of a file is open-ended. Lambdas and the
-methods of anonymous classes live inside a method and cut no range.
+methods of anonymous classes live inside a method: they cut no range,
+and their counts are added to that method.
 
 Coverage is the branch coverage of the method. A method without branches
 has no BRANCH counter; for it (cc = 1) line coverage is equivalent.
@@ -15,7 +16,7 @@ source file is found by its package, because its directory may differ.
 import re
 import subprocess
 import xml.etree.ElementTree as ET
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 import crap_core
 
@@ -36,15 +37,39 @@ def is_nested(entry):
     return is_lambda(name) or is_anonymous(cls)
 
 
-def method_entry(m):
+# branch and line are (missed, covered); branch is None without branches
+Counts = namedtuple("Counts", "cc branch line")
+
+
+def method_counts(m):
     counters = {
         c.get("type"): (int(c.get("missed")), int(c.get("covered")))
         for c in m.findall("counter")
     }
-    cc = sum(counters["COMPLEXITY"])
-    kind = "branch" if "BRANCH" in counters else "line"
-    missed, covered = counters.get("BRANCH", counters["LINE"])
-    return int(m.get("line")), m.get("name"), cc, covered / (missed + covered), kind
+    return Counts(sum(counters["COMPLEXITY"]), counters.get("BRANCH"),
+                  counters["LINE"])
+
+
+def add_pairs(a, b):
+    if a is None or b is None:
+        return a or b
+    return (a[0] + b[0], a[1] + b[1])
+
+
+def absorb(outer, inner):
+    """The counts of a method with a lambda inside it.
+
+    The lambda adds its decisions (cc - 1), its branches and its lines.
+    """
+    return Counts(outer.cc + inner.cc - 1, add_pairs(outer.branch, inner.branch),
+                  add_pairs(outer.line, inner.line))
+
+
+def coverage_of(counts):
+    """Branch coverage; line coverage for a method without branches."""
+    kind = "branch" if counts.branch else "line"
+    missed, covered = counts.branch or counts.line
+    return covered / (missed + covered), kind
 
 
 def fold_defaults(entries):
@@ -73,7 +98,7 @@ def with_ranges(entries):
     Entries with the same start (a Kotlin data class gives its constructor
     and its properties one line) share the range up to the next start.
     """
-    entries = sorted(entries)
+    entries = sorted(entries, key=lambda e: e[:3])
     starts = sorted({e[0] for e in entries})
     following = dict(zip(starts, starts[1:]))
     for entry in entries:
@@ -128,18 +153,39 @@ def records(report, include_lambdas=False, sources=None):
             key = package.get("name") + "/" + cls.get("sourcefilename")
             key = index.get(key, key)
             for m in cls.findall("method"):
-                start, name, cc, coverage, kind = method_entry(m)
-                per_file[key].append(
-                    (start, cls.get("name"), name, cc, coverage, kind))
+                per_file[key].append((int(m.get("line")), cls.get("name"),
+                                      m.get("name"), method_counts(m)))
     for key, entries in per_file.items():
         entries = fold_defaults(entries)
-        named = [e for e in entries if not is_nested(e)]
-        lambdas = [e for e in entries if is_nested(e)] if include_lambdas else []
         # a lambda lives inside a named method and must not cut its range
-        for group in (named, lambdas):
-            for (start, cls, name, cc, coverage, kind), end in with_ranges(group):
+        named = list(with_ranges([e for e in entries if not is_nested(e)]))
+        nested = [e for e in entries if is_nested(e)]
+        if include_lambdas:
+            groups = (named, list(with_ranges(nested)))
+        else:
+            groups = (absorb_nested(named, nested),)
+        for group in groups:
+            for (start, cls, name, counts), end in group:
+                coverage, kind = coverage_of(counts)
                 yield {"file": key, "name": f"{cls}.{name}", "start": start,
-                       "end": end, "cc": cc, "coverage": coverage, "kind": kind}
+                       "end": end, "cc": counts.cc, "coverage": coverage,
+                       "kind": kind}
+
+
+def absorb_nested(ranged, nested):
+    """Add each lambda to the named method whose range holds its start.
+
+    A lambda outside every range (a field initializer above the first
+    method) is dropped.
+    """
+    ranged = [list(item) for item in ranged]
+    for start, _, _, counts in nested:
+        for item in ranged:
+            (outer_start, cls, name, outer), end = item
+            if outer_start <= start and (end is None or start <= end):
+                item[0] = (outer_start, cls, name, absorb(outer, counts))
+                break
+    return [tuple(item) for item in ranged]
 
 
 def collect(report, include_lambdas=False, **_):
