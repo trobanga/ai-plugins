@@ -1,0 +1,11 @@
+{
+  "name": "prose-width",
+  "version": "0.2.0",
+  "description": "Wraps the prose of Claude's replies at 72 columns in a centered column on wide terminals; code fences keep their width. /prose-width sets the limit.",
+  "author": {
+    "name": "Daniel Hahne",
+    "email": "daniel@trobanga.de"
+  },
+  "types": "./types/index.d.ts",
+  "license": "Apache-2.0"
+}

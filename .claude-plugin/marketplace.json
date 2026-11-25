@@ -27,6 +27,17 @@
         "email": "daniel@trobanga.de"
       },
       "license": "MIT"
+    },
+    {
+      "name": "prose-width",
+      "source": "./plugins/prose-width",
+      "description": "Wraps the prose of Claude's replies at 72 columns in a centered column on wide terminals; code fences keep their width. /prose-width sets the limit.",
+      "version": "0.2.0",
+      "author": {
+        "name": "Daniel Hahne",
+        "email": "daniel@trobanga.de"
+      },
+      "license": "Apache-2.0"
     }
   ]
 }
