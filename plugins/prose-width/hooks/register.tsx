@@ -1,7 +1,7 @@
 import type { Register } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 import type { Layout } from '../types'
-import { blocks, wrapProse } from './wrap'
+import { blocks, tableWidth, wrapProse } from './wrap'
 
 const DEFAULT = 72
 const MIN = 20
@@ -53,13 +53,13 @@ export const register: Register = (on) => {
     }
     const { Box } = $.ui.resolve(e)
     const padding = Math.floor((columns - width) / 2)
-    // Claude Code sizes a table to the terminal, so a table starts at the left edge.
+    // A table is centered on the page; one wider than the terminal starts at the left edge.
     const drawn = []
     for (const [i, part] of parts.entries()) {
       const text = part.table ? part.text : wrapProse(part.text, width)
       const isFirstOfReply = e.props.isFirstOfReply && i === 0
       const child = await next({ ...e, props: { ...e.props, text, isFirstOfReply } })
-      drawn.push(<Box key={String(i)} marginTop={i ? 1 : 0} paddingLeft={part.table ? 0 : padding}>{child}</Box>)
+      drawn.push(<Box key={String(i)} marginTop={i ? 1 : 0} paddingLeft={part.table ? Math.max(0, Math.floor((columns - tableWidth(part.text)) / 2)) : padding}>{child}</Box>)
     }
     return <Box flexDirection="column">{drawn}</Box>
   })

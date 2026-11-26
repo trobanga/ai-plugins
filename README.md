@@ -50,7 +50,7 @@ These parts run in Claude Code only:
 | --- | --- | --- |
 | [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 37 skills and 5 subagents: TDD, coverage, CRAP score, mutation testing, review, architecture, issues, Bevy, Godot, writing. |
 | [trobanga-progress](plugins/trobanga-progress) | 0.1.0 | Mod: progress bar for `implement` and a live panel of subagents. |
-| [prose-width](plugins/prose-width) | 0.2.1 | Mod: wraps the prose of Claude's replies at 72 columns in a centered column. |
+| [prose-width](plugins/prose-width) | 0.2.2 | Mod: wraps the prose of Claude's replies at 72 columns in a centered column. |
 
 ## Hooks and safety
 

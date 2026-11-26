@@ -59,3 +59,29 @@ export function blocks(text: string): Block[] {
     .map((b) => ({ ...b, text: b.text.replace(/^\n+|\n+$/g, '') }))
     .filter((b) => b.text.trim() !== '')
 }
+
+/** The visible width of markdown inline text: code ticks, emphasis marks and link targets drawn as nothing. */
+function visible(cell: string): number {
+  const text = cell
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/`+/g, '')
+    .replace(/(\*\*|__|\*|_|~~)(?=\S)|(?<=\S)(\*\*|__|\*|_|~~)/g, '')
+    .replace(/\\(.)/g, '$1')
+  // Wide characters (CJK, emoji) take two cells.
+  return [...text].reduce((n, c) => n + (/[\u{1100}-\u{115F}\u{2E80}-\u{A4CF}\u{AC00}-\u{D7A3}\u{F900}-\u{FAFF}\u{FE30}-\u{FE4F}\u{FF00}-\u{FF60}\u{FFE0}-\u{FFE6}\u{1F300}-\u{1FAFF}]/u.test(c) ? 2 : 1), 0)
+}
+
+/**
+ * The columns a markdown table takes as Claude Code draws it with box borders:
+ * the widest cell of each column, a space each side of it, and a border between
+ * and around the columns. The separator row does not count.
+ */
+export function tableWidth(table: string): number {
+  const widths: number[] = []
+  for (const line of table.split('\n')) {
+    const cells = line.trim().replace(/^\|/, '').replace(/\|$/, '').split(/(?<!\\)\|/)
+    if (cells.every((c) => /^\s*:?-+:?\s*$/.test(c))) continue
+    cells.forEach((c, i) => { widths[i] = Math.max(widths[i] ?? 0, visible(c.trim())) })
+  }
+  return widths.reduce((sum, w) => sum + w + 3, 1)
+}

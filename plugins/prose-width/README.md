@@ -46,8 +46,10 @@ four columns wider than the limit.
 - The wrap counts the raw markdown characters, so the markup of links, bold
   text and inline code also counts. Lines with much markup look shorter than
   the limit.
-- Claude Code sizes a table to the terminal, so a top-level table starts at the
-  left edge, not in the centered column. A table inside a list or a quote
-  keeps the padding.
+- A top-level table is centered on the page by its own width, not in the
+  column of the prose; a table wider than the terminal starts at the left
+  edge. The mod cannot read the drawn table, so it estimates the width from
+  the markdown, for tables with box borders. A table inside a list or a quote
+  keeps the padding of the prose.
 - Code fences that are wider than the space right of the padding are cut or
   wrapped by Claude Code.

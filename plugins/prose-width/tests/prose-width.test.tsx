@@ -137,14 +137,32 @@ test('/prose-width --store keeps the layout for new sessions; without it the sto
   expect(disk.layout).toEqual({ width: null, center: false })
 })
 
-test('a table starts at the left edge while the prose around it stays centered', async ($, on) => {
+/** A table with one header column and one column of the given width. */
+const tableOf = (cell: number) => '| Name | ' + 'v'.repeat(cell) + ' |\n| --- | --- |\n| a | 1 |'
+
+/** The left padding of the innermost box that holds the table. */
+const tablePadding = (drawn: { padding: number; text: string }[]) =>
+  drawn.filter((b) => b.text.includes('| Name |')).at(-1)!.padding
+
+test('a table is centered on the page, and the prose keeps its column', async ($, on) => {
   const { start, boxes } = engine(on)
   await start($)
-  const table = '| Name | Value |\n| --- | --- |\n| a | 1 |'
-  const drawn = await boxes($, 'Intro text.\n\n' + table + '\n\nOutro text.')
-  const padded = drawn.filter((b) => b.padding > 0)
-  expect(drawn.some((b) => b.text.includes('| Name | Value |'))).toBe(true)
-  expect(padded.some((b) => b.text.includes('| Name |'))).toBe(false)
-  expect(padded.some((b) => b.text.includes('Intro text.'))).toBe(true)
-  expect(padded.some((b) => b.text.includes('Outro text.'))).toBe(true)
+  // Drawn 51 columns wide: 4 + 40 cells, 3 per column for spaces and borders, 1 border.
+  const drawn = await boxes($, 'Intro text.\n\n' + tableOf(40) + '\n\nOutro text.')
+  expect(tablePadding(drawn)).toBe(Math.floor((200 - 51) / 2))
+  expect(drawn.find((b) => b.text.includes('Intro text.') && !b.text.includes('| Name |'))?.padding).toBe(64)
+})
+
+test('a table wider than the terminal starts at the left edge', async ($, on) => {
+  const { start, boxes } = engine(on)
+  await start($)
+  expect(tablePadding(await boxes($, 'Intro.\n\n' + tableOf(250)))).toBe(0)
+})
+
+test('the width of a table counts link text, not the link target', async ($, on) => {
+  const { start, boxes } = engine(on)
+  await start($)
+  const table = '| Name | [docs](https://example.com/' + 'x'.repeat(150) + ') |\n| --- | --- |\n| a | 1 |'
+  // Drawn 16 columns wide: 4 + 4 cells, 3 per column, 1 border.
+  expect(tablePadding(await boxes($, 'Intro.\n\n' + table))).toBe(Math.floor((200 - 16) / 2))
 })
