@@ -22,7 +22,7 @@ function engine(on: any, stored: Record<string, unknown> = {}) {
   on('command.register', (_: any, e: any) => ({ value: { command: e.name } }))
 
   /** Draws a reply on a terminal 200 columns wide and returns the drawn text and the left padding. */
-  async function mount($: any, text: string): Promise<{ screen: string; padding: number }> {
+  async function mount($: any, text: string): Promise<{ screen: string; padding: number; boxes: { padding: number; text: string }[] }> {
     const ui = await $.ui.mount({
       plugin: 'prose-width',
       component: 'AssistantMessage',
@@ -33,8 +33,9 @@ function engine(on: any, stored: Record<string, unknown> = {}) {
     })
     const screen = (await ui.find({ type: 'Text' }))?.text ?? ''
     const padding = (await ui.find({ type: 'Box' }))?.props?.paddingLeft ?? 0
+    const boxes = (await ui.findAll({ type: 'Box' })).map((b: any) => ({ padding: b.props?.paddingLeft ?? 0, text: b.text ?? '' }))
     await ui.unmount()
-    return { screen, padding }
+    return { screen, padding, boxes }
   }
 
   return {
@@ -56,6 +57,8 @@ function engine(on: any, stored: Record<string, unknown> = {}) {
     },
     /** The text drawn for a reply. */
     draw: async ($: any, text: string) => (await mount($, text)).screen,
+    /** The boxes drawn for a reply, with their left padding and text. */
+    boxes: async ($: any, text: string) => (await mount($, text)).boxes,
     /** The left padding of a reply's prose. */
     margin: async ($: any, text: string) => (await mount($, text)).padding,
   }
@@ -132,4 +135,16 @@ test('/prose-width --store keeps the layout for new sessions; without it the sto
   expect(disk.layout).toEqual({ width: 50, center: true })
   await command($, 'off --store')
   expect(disk.layout).toEqual({ width: null, center: false })
+})
+
+test('a table starts at the left edge while the prose around it stays centered', async ($, on) => {
+  const { start, boxes } = engine(on)
+  await start($)
+  const table = '| Name | Value |\n| --- | --- |\n| a | 1 |'
+  const drawn = await boxes($, 'Intro text.\n\n' + table + '\n\nOutro text.')
+  const padded = drawn.filter((b) => b.padding > 0)
+  expect(drawn.some((b) => b.text.includes('| Name | Value |'))).toBe(true)
+  expect(padded.some((b) => b.text.includes('| Name |'))).toBe(false)
+  expect(padded.some((b) => b.text.includes('Intro text.'))).toBe(true)
+  expect(padded.some((b) => b.text.includes('Outro text.'))).toBe(true)
 })

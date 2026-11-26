@@ -46,5 +46,8 @@ four columns wider than the limit.
 - The wrap counts the raw markdown characters, so the markup of links, bold
   text and inline code also counts. Lines with much markup look shorter than
   the limit.
-- Tables and code fences that are wider than the space right of the padding
-  are cut or wrapped by Claude Code. Use `/prose-width left` for wide tables.
+- Claude Code sizes a table to the terminal, so a top-level table starts at the
+  left edge, not in the centered column. A table inside a list or a quote
+  keeps the padding.
+- Code fences that are wider than the space right of the padding are cut or
+  wrapped by Claude Code.

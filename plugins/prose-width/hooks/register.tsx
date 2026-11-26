@@ -1,7 +1,7 @@
 import type { Register } from 'claude-code'
 import { atom, read, update } from 'claude-code'
 import type { Layout } from '../types'
-import { wrapProse } from './wrap'
+import { blocks, wrapProse } from './wrap'
 
 const DEFAULT = 72
 const MIN = 20
@@ -44,10 +44,24 @@ export const register: Register = (on) => {
     const { width, center } = await read($, layout)
     const columns = e.viewport?.columns
     if (e.surface !== 'terminal' || !width || !columns || columns <= width + 4) return next(e)
-    const node = await next({ ...e, props: { ...e.props, text: wrapProse(e.props.text, width) } })
-    if (!center) return node
+    const parts = blocks(e.props.text)
+    if (!center || !parts.some((p) => p.table)) {
+      const node = await next({ ...e, props: { ...e.props, text: wrapProse(e.props.text, width) } })
+      if (!center) return node
+      const { Box } = $.ui.resolve(e)
+      return <Box paddingLeft={Math.floor((columns - width) / 2)}>{node}</Box>
+    }
     const { Box } = $.ui.resolve(e)
-    return <Box paddingLeft={Math.floor((columns - width) / 2)}>{node}</Box>
+    const padding = Math.floor((columns - width) / 2)
+    // Claude Code sizes a table to the terminal, so a table starts at the left edge.
+    const drawn = []
+    for (const [i, part] of parts.entries()) {
+      const text = part.table ? part.text : wrapProse(part.text, width)
+      const isFirstOfReply = e.props.isFirstOfReply && i === 0
+      const child = await next({ ...e, props: { ...e.props, text, isFirstOfReply } })
+      drawn.push(<Box key={String(i)} marginTop={i ? 1 : 0} paddingLeft={part.table ? 0 : padding}>{child}</Box>)
+    }
+    return <Box flexDirection="column">{drawn}</Box>
   })
 
 }
