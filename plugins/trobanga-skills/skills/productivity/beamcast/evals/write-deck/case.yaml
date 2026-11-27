@@ -3,7 +3,7 @@ name: write-deck
 description: >
   Write a five-slide deck from an outline whose wording invites Markdown habits
   ("subheading", "in bold", a pause before the third bullet). Hypothesis: a
-  default agent writes Markdown, so `## ` headings, `**bold**` and loose lines
+  default agent writes Markdown, so `### ` headings, `**bold**` and loose lines
   next to `@area`, none of which the Beamcast parser accepts, and it misses the `--` build mark. The
   graders check the written .bc file and that the agent runs the offline-safe
   `check` step and does not push. No token is set and the sandbox has no
@@ -32,9 +32,9 @@ graders:
   - name: written
     type: file_exists
     path: talk.bc
-  - name: no-second-level-heading
+  - name: no-third-level-heading
     type: regex
-    pattern: '^#{2,}\s'
+    pattern: '^#{3,}\s'
     flags: m
     match: not_contains
     target: {source: file, path: talk.bc}

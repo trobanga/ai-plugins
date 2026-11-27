@@ -1,7 +1,7 @@
 {
   "name": "trobanga-skills",
   "description": "trobanga personal skills: workflow, docs, architecture, gamedev, and engineering skills",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "skills": [
     "./skills/engineering",
     "./skills/gamedev",

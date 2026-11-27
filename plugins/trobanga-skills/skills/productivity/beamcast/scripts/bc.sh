@@ -22,6 +22,10 @@ bc.sh — a client for the Beamcast JSON API.
   images                    list your stored pictures
   image <file>              upload a picture, print its /i/<id> mark
   rm-image <id>             delete a stored picture
+  palettes                  list the palettes your decks may name (your own, then shared ones as <handle>/<name>)
+  pull-palette <name> [file]  download a palette as JSON
+  push-palette <file>       create or replace the palette a JSON file names
+  rm-palette <name>         delete one of your palettes
 
 BEAMCAST_TOKEN holds the API token. BEAMCAST_HOST overrides the host.
 TEXT
@@ -50,8 +54,9 @@ send() {
     BODY="${answer%$'\n'*}"
 }
 
-# The API answers a refusal with `errors: [{line, message}]`, where the line
-# is the line of the deck source the parser stopped on.
+# The API answers a refusal with `errors: [{line, message, related}]`, where
+# the line is the line of the deck source the parser stopped on, and related
+# the other lines the same error concerns.
 check_status() {
     [[ "$STATUS" == 2* ]] && return 0
 
@@ -60,13 +65,21 @@ check_status() {
         if .line then "line \(.line): \(.message)" else .message end' \
         <<<"$BODY" 2>/dev/null)" || true
 
-    # A refusal from Cloudflare is an HTML page, and one from an endpoint
+    # A refusal from the reverse proxy is an HTML page, and one from an endpoint
     # that answers no `errors` array is JSON of another shape. Either way
     # the body itself is the only account of what happened.
     [[ -n "$reported" ]] || reported="$BODY"
 
     printf 'HTTP %s\n%s\n' "$STATUS" "$reported" >&2
     exit 1
+}
+
+# A deck that parses may carry warnings (BC-24), `warnings: [{line, message}]`:
+# a plot whose area is too small for its parts is drawn smaller than the
+# deck's text. They block nothing; they go to stderr, so what the command
+# prints on stdout stays the same.
+report_warnings() {
+    jq -r '.warnings[]? | "warning: line \(.line): \(.message)"' <<<"$BODY" >&2 || true
 }
 
 # The deck source as a JSON object, escaped by jq rather than by hand.
@@ -81,6 +94,7 @@ check)
         --data-binary "$(source_body "$2")"
     check_status
     jq -r '"\(.slides) slides"' <<<"$BODY"
+    report_warnings
     ;;
 push)
     send PUT "/api/v1/presentations/$2/source" \
@@ -88,6 +102,7 @@ push)
         --data-binary "$(source_body "$3")"
     check_status
     echo "pushed $3 to $2"
+    report_warnings
     ;;
 pull)
     send GET "/api/v1/presentations/$2/source"
@@ -122,6 +137,7 @@ new)
         --data-binary "$body"
     check_status
     jq -r '.slug' <<<"$BODY"
+    report_warnings
     ;;
 list)
     send GET /api/v1/presentations
@@ -153,6 +169,42 @@ rm-image)
     send DELETE "/api/v1/images/$2"
     check_status
     echo "deleted /i/$2"
+    ;;
+palettes)
+    send GET /api/v1/palettes
+    check_status
+    jq -r '.palettes[] | .name' <<<"$BODY"
+    ;;
+pull-palette)
+    send GET "/api/v1/palettes/$2"
+    check_status
+    if [[ -n "${3:-}" ]]; then
+        jq . <<<"$BODY" >"$3"
+        echo "pulled $2 into $3" >&2
+    else
+        jq . <<<"$BODY"
+    fi
+    ;;
+push-palette)
+    # The name in the file says which palette: replace it when it exists,
+    # create it when not. A palette is never renamed, because decks name it.
+    name="$(jq -r '.name' "$2")"
+    send PUT "/api/v1/palettes/$name" \
+        -H "Content-Type: application/json" \
+        --data-binary "@$2"
+    if [[ "$STATUS" == 404 ]]; then
+        send POST /api/v1/palettes \
+            -H "Content-Type: application/json" \
+            --data-binary "@$2"
+    fi
+    check_status
+    echo "pushed palette $name"
+    ;;
+rm-palette)
+    # A deck that names it keeps its slides and draws in slate.
+    send DELETE "/api/v1/palettes/$2"
+    check_status
+    echo "deleted palette $2"
     ;;
 *)
     echo "unknown command: ${1:-}" >&2

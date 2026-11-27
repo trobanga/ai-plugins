@@ -2,7 +2,7 @@ schema_version: "1.1"
 name: fix-refused-deck
 description: >
   Repair a deck the parser refused. The pasted refusal names only line 6 (a
-  `## ` heading), but the deck breaks six more rules: a non-blank line below
+  `### ` heading), but the deck breaks six more rules: a non-blank line below
   `@qr`, a loose line on a slide with `@area`, `@palette` on a slide, an area
   off the 1920-wide canvas, an unclosed `*` and a `--` build mark with nothing
   below it. Hypothesis: a default agent fixes the named line and stops, since
@@ -21,7 +21,7 @@ execution:
     folder is one of your additional working directories) with:
 
         HTTP 422
-        line 6: heading below the first level
+        line 6: a slide area has two heading levels: # and ##
 
     Fix the deck so that it parses, keeping its content, and write the fixed
     deck to `talk.bc` in the current directory. The `broken` folder is
@@ -32,7 +32,7 @@ graders:
     path: talk.bc
   - name: named-line-fixed
     type: regex
-    pattern: '^#{2,}\s'
+    pattern: '^#{3,}\s'
     flags: m
     match: not_contains
     target: {source: file, path: talk.bc}

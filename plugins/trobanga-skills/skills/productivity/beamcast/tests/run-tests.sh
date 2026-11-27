@@ -7,7 +7,8 @@
 #
 # No test touches the network. `BEAMCAST_CURL` points bc.sh at a fake curl
 # that writes its arguments to $ARGS and answers with the canned body in
-# $REPLY_BODY and the status in $REPLY_CODE.
+# $REPLY_BODY and the status in $REPLY_CODE. `then_reply` queues a second
+# reply for a command that sends two requests.
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BC="$(cd "$HERE/../scripts" && pwd)/bc.sh"
@@ -41,7 +42,14 @@ report() {
 reply() {
     printf '%s' "$1" >"$REPLY_BODY"
     printf '%s' "${2:-200}" >"$REPLY_CODE"
+    rm -f "$REPLY_BODY.next" "$REPLY_CODE.next"
     : >"$ARGS"
+}
+
+# Arrange the reply to the second request of the same run.
+then_reply() {
+    printf '%s' "$1" >"$REPLY_BODY.next"
+    printf '%s' "${2:-200}" >"$REPLY_CODE.next"
 }
 
 # --- Test 1: check posts the file as the source field ------------------------
@@ -220,6 +228,81 @@ if [[ "$OUT" == *"check <file>"* && "$OUT" == *"push <slug> <file>"* ]]; then
     report ok "no arguments explains the script"
 else
     report no "no arguments explains the script" "$OUT"
+fi
+
+# --- Test 18: palettes lists the palette names -------------------------------
+reply '{"palettes":[{"name":"kimed"},{"name":"ada/ocean"}]}'
+OUT=$("$BC" palettes 2>&1) || true
+SENT=$(cat "$ARGS")
+if grep -qx 'GET' "$ARGS" &&
+    grep -qx 'https://beamcast.example/api/v1/palettes' "$ARGS" &&
+    [[ "$OUT" == $'kimed\nada/ocean' ]]; then
+    report ok "palettes lists the palette names"
+else
+    report no "palettes lists the palette names" "$SENT"$'\n'"$OUT"
+fi
+
+# --- Test 19: pull-palette writes the palette JSON to the file ---------------
+reply '{"name":"kimed","dark":{"ink":"#ffffff"},"light":{"ink":"#000a29"}}'
+rm -f "$WORK/kimed.json"
+OUT=$("$BC" pull-palette kimed "$WORK/kimed.json" 2>&1) || true
+SENT=$(cat "$ARGS")
+if grep -qx 'GET' "$ARGS" &&
+    grep -qx 'https://beamcast.example/api/v1/palettes/kimed' "$ARGS" &&
+    [[ "$(jq -r '.name + " " + .light.ink' "$WORK/kimed.json" 2>/dev/null)" == "kimed #000a29" ]]; then
+    report ok "pull-palette writes the palette JSON to the file"
+else
+    report no "pull-palette writes the palette JSON to the file" "$SENT"$'\n'"$OUT"
+fi
+
+# --- Test 20: push-palette replaces the palette the file names ---------------
+printf '{"name":"kimed","dark":{},"light":{}}' >"$WORK/kimed.json"
+reply '{"name":"kimed"}'
+OUT=$("$BC" push-palette "$WORK/kimed.json" 2>&1) || true
+SENT=$(cat "$ARGS")
+if grep -qx 'PUT' "$ARGS" && ! grep -qx 'POST' "$ARGS" &&
+    grep -qx 'https://beamcast.example/api/v1/palettes/kimed' "$ARGS" &&
+    grep -qxF "@$WORK/kimed.json" "$ARGS"; then
+    report ok "push-palette replaces the palette the file names"
+else
+    report no "push-palette replaces the palette the file names" "$SENT"$'\n'"$OUT"
+fi
+
+# --- Test 21: push-palette creates the palette when it does not exist --------
+reply '{"errors":[{"message":"not found"}]}' 404
+then_reply '{"name":"kimed"}' 201
+OUT=$("$BC" push-palette "$WORK/kimed.json" 2>&1)
+CODE=$?
+SENT=$(cat "$ARGS")
+if grep -qx 'PUT' "$ARGS" && grep -qx 'POST' "$ARGS" &&
+    grep -qx 'https://beamcast.example/api/v1/palettes' "$ARGS" &&
+    [[ "$CODE" == 0 ]]; then
+    report ok "push-palette creates the palette when it does not exist"
+else
+    report no "push-palette creates the palette when it does not exist" "exit $CODE"$'\n'"$SENT"$'\n'"$OUT"
+fi
+
+# --- Test 22: rm-palette deletes the palette ---------------------------------
+reply '' 204
+OUT=$("$BC" rm-palette kimed 2>&1) || true
+SENT=$(cat "$ARGS")
+if grep -qx 'DELETE' "$ARGS" &&
+    grep -qx 'https://beamcast.example/api/v1/palettes/kimed' "$ARGS"; then
+    report ok "rm-palette deletes the palette"
+else
+    report no "rm-palette deletes the palette" "$SENT"$'\n'"$OUT"
+fi
+
+# --- Test 23: check prints warnings on stderr, not on stdout -----------------
+reply '{"slides":3,"warnings":[{"line":7,"message":"plot area too small"}]}'
+OUT=$("$BC" check "$WORK/slides.bc" 2>"$WORK/err")
+CODE=$?
+ERR=$(cat "$WORK/err")
+if [[ "$OUT" == "3 slides" && "$CODE" == 0 ]] &&
+    [[ "$ERR" == *"warning: line 7: plot area too small"* ]]; then
+    report ok "check prints warnings on stderr, not on stdout"
+else
+    report no "check prints warnings on stderr, not on stdout" "exit $CODE"$'\n'"stdout: $OUT"$'\n'"stderr: $ERR"
 fi
 
 echo
