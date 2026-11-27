@@ -15,6 +15,7 @@ Add the marketplace, then install the plugins you want:
 /plugin install trobanga-skills@trobanga
 /plugin install trobanga-progress@trobanga
 /plugin install prose-width@trobanga
+/plugin install gloss@trobanga
 ```
 
 Claude Code reads the plugins from the default branch. To get updates, run
@@ -41,6 +42,7 @@ These parts run in Claude Code only:
 
 - `trobanga-progress`, a Claude Code mod.
 - `prose-width`, a Claude Code mod. pi has its own version in `pi-extensions`.
+- `gloss`, a Claude Code mod. pi has its own version in `pi-extensions`.
 - `evaluate-skill`, which runs `claude plugin eval`.
 - The `Workflow` loop of `improve-coverage`.
 
@@ -50,7 +52,8 @@ These parts run in Claude Code only:
 | --- | --- | --- |
 | [trobanga-skills](plugins/trobanga-skills) | 0.1.0 | 37 skills and 5 subagents: TDD, coverage, CRAP score, mutation testing, review, architecture, issues, Bevy, Godot, writing. |
 | [trobanga-progress](plugins/trobanga-progress) | 0.1.0 | Mod: progress bar for `implement` and a live panel of subagents. |
-| [prose-width](plugins/prose-width) | 0.2.2 | Mod: wraps the prose of Claude's replies at 72 columns in a centered column. |
+| [prose-width](plugins/prose-width) | 0.2.3 | Mod: wraps the prose of Claude's replies at 72 columns in a centered column. |
+| [gloss](plugins/gloss) | 0.1.0 | Mod: select an item code, `file:line` or commit hash, and a band above the prompt shows what it refers to. |
 
 ## Hooks and safety
 
@@ -65,6 +68,10 @@ state, and they type-check and clamp their input.
 `prose-width` is a mod: it rewrites the text of Claude's replies before the
 terminal draws it, and it adds the `/prose-width` command. It does not change
 the stored messages, and it makes no tool, network, file or process calls.
+
+`gloss` is a mod: it reads the transcript and the selection, and it adds the
+`/gloss` command. It reads files with `$.fs.read` and runs `git show`, but it
+writes nothing and makes no network calls.
 
 ## Repository layout
 

@@ -32,7 +32,18 @@
       "name": "prose-width",
       "source": "./plugins/prose-width",
       "description": "Wraps the prose of Claude's replies at 72 columns in a centered column on wide terminals; code fences keep their width. /prose-width sets the limit.",
-      "version": "0.2.2",
+      "version": "0.2.3",
+      "author": {
+        "name": "Daniel Hahne",
+        "email": "daniel@trobanga.de"
+      },
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "gloss",
+      "source": "./plugins/gloss",
+      "description": "Select an item code (F3), a file reference (src/a.ts:12) or a commit hash in fullscreen mode, and a band above the prompt shows what it refers to. /gloss <token> does the same from the keyboard.",
+      "version": "0.1.0",
       "author": {
         "name": "Daniel Hahne",
         "email": "daniel@trobanga.de"

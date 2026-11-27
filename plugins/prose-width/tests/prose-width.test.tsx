@@ -166,3 +166,15 @@ test('the width of a table counts link text, not the link target', async ($, on)
   // Drawn 16 columns wide: 4 + 4 cells, 3 per column, 1 border.
   expect(tablePadding(await boxes($, 'Intro.\n\n' + table))).toBe(Math.floor((200 - 16) / 2))
 })
+
+test('the layout is in the session state from the start, so other mods can read it', async ($, on) => {
+  // The state beneath the mod: what it writes is what another mod reads.
+  const written: unknown[] = []
+  on('state.set', (_: any, e: any) => {
+    written.push(e.value)
+    return { value: { isSet: true, version: written.length } }
+  })
+  const { start } = engine(on)
+  await start($)
+  expect(written).toEqual([{ width: 72, center: true }])
+})

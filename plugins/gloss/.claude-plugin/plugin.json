@@ -1,0 +1,11 @@
+{
+  "name": "gloss",
+  "version": "0.1.0",
+  "description": "Select an item code (F3), a file reference (src/a.ts:12) or a commit hash in fullscreen mode, and a band above the prompt shows what it refers to. /gloss <token> does the same from the keyboard.",
+  "author": {
+    "name": "Daniel Hahne",
+    "email": "daniel@trobanga.de"
+  },
+  "types": "./types/index.d.ts",
+  "license": "Apache-2.0"
+}

@@ -29,6 +29,10 @@ Without `--store`, a change applies to the current session only. A new session
 starts with the stored layout, or at 72 and centered if nothing is stored. A
 reload of the plugins also goes back to the stored layout.
 
+The mod writes the layout to the session state (`prose-width.layout`) at each
+start and each change, so that other mods can read it. `gloss` uses it to put
+its band in the same column.
+
 ## How it works
 
 Claude Code has no setting for the width of markdown, and a mod cannot put the

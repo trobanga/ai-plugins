@@ -22,7 +22,8 @@ export const register: Register = (on) => {
   on('session.start', async ($, e, next) => {
     const started = await next(e)
     const stored = (await $.store.get('layout')) as Layout | undefined
-    if (stored) await update($, layout, () => stored)
+    // Written also when nothing is stored, so that other mods, such as gloss, can read the layout.
+    await update($, layout, (prev) => stored ?? prev)
     await $.command.register({
       name: 'prose-width',
       description: `Wrap prose at N columns (default ${DEFAULT}); "center", "left" or "off"; --store keeps it for new sessions`,
