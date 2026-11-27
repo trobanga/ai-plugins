@@ -15,14 +15,16 @@ const ITEM = /^(\s*)(?:(?:[-*+]|\d+[.)])\s+)?/
 /**
  * The forms of a definition after the list marker, each giving code, title and text:
  * `**F3 Title.** text` (`.` or `:`), `**F3:** text` with no title, `**F3 — Title**`, `F3 — Title` (`—`, `–` or `-`,
- * with an optional `: text`) and `F3 Title: text`. Each may start a list item, at any depth.
+ * with an optional `: text`) and `F3 Title: text`. Each may start a list item, at any depth. Without
+ * bold, the title starts with a capital letter or a digit, so that a sentence such as
+ * `F3 is confirmed: …` is no definition.
  */
 const FORMS = [
   /^\*\*([A-Z]\d+) ([^*:]+?)[.:]\*\*\s+(.*)$/,
   /^\*\*([A-Z]\d+)()[.:]\*\*\s+(.*)$/,
   /^\*\*([A-Z]\d+)\s+[—–-]\s+([^*]+?)[.:]?\*\*(?:\s+(.*))?$/,
-  /^([A-Z]\d+)\s+[—–-]\s+([^:]+?)(?::\s+(.*))?$/,
-  /^([A-Z]\d+) ([^:]+?):\s+(.*)$/,
+  /^([A-Z]\d+)\s+[—–-]\s+([A-Z0-9][^:]*?)(?::\s+(.*))?$/,
+  /^([A-Z]\d+) ([A-Z0-9][^:]*?):\s+(.*)$/,
 ]
 
 /** The part of a session message that definitionsOf reads. */
@@ -32,14 +34,15 @@ export interface Message {
 }
 
 /**
- * The definitions in the assistant messages, oldest first; a later definition of a code wins.
- * Only the model defines codes: a user message that quotes one does not.
+ * The definitions in the assistant messages, oldest first. The first definition of a code wins: a
+ * code keeps its meaning for the whole conversation, so a later line with it is a mention. Only
+ * the model defines codes: a user message that quotes one does not.
  */
 export function definitionsOf(messages: readonly Message[]): Map<string, Definition> {
   const defs = new Map<string, Definition>()
   for (const message of messages) {
     if (message.role !== 'assistant') continue
-    for (const [code, def] of extractDefinitions(message.text)) defs.set(code, def)
+    for (const [code, def] of extractDefinitions(message.text)) if (!defs.has(code)) defs.set(code, def)
   }
   return defs
 }
@@ -58,7 +61,7 @@ export function extractDefinitions(markdown: string): Map<string, Definition> {
     const [, code, title, text = ''] = match ?? []
     if (!code || title === undefined) continue
     const below = indentedBelow(lines, i, item.length - item.trimStart().length)
-    defs.set(code, { code, title, text: [text, below].filter(Boolean).join('\n') })
+    if (!defs.has(code)) defs.set(code, { code, title, text: [text, below].filter(Boolean).join('\n') })
   }
   return defs
 }

@@ -41,7 +41,8 @@ The mod knows these forms of a definition. Each may start a list item.
 | `F3 — Title`, with `—`, `–` or `-` | `Title` | the lines indented below |
 
 The lines indented below a definition, such as a nested list, are added to its
-text in each form.
+text in each form. Without bold, the title must start with a capital letter or a
+digit, so that a sentence such as `F2 is confirmed: …` is no definition.
 
 ## How it works
 
@@ -55,8 +56,9 @@ the mod does no lookup for it.
 The resolvers ask, in this order:
 
 1. The item codes in the assistant messages of the transcript, read afresh at
-   each lookup. A later definition of a code wins. A user message that quotes
-   a definition defines nothing.
+   each lookup. The first definition of a code wins, so a later line that
+   starts with the same code is a mention. A user message that quotes a
+   definition defines nothing.
 2. The file, read with `$.fs.read`. A path is relative to the session's
    directory.
 3. `git show`, with a timeout of 2 s.

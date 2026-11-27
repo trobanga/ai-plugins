@@ -43,7 +43,7 @@
       "name": "gloss",
       "source": "./plugins/gloss",
       "description": "Select an item code (F3), a file reference (src/a.ts:12) or a commit hash in fullscreen mode, and a band above the prompt shows what it refers to. /gloss <token> does the same from the keyboard.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Daniel Hahne",
         "email": "daniel@trobanga.de"

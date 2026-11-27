@@ -335,3 +335,16 @@ test('a selection that a double click turns into a paragraph leaves the band ope
   await settle(clock)
   expect(await g.band($)).toBe('**F3 Missing null check**\n\nfirst.')
 })
+
+test('a sentence that starts with a code is no definition', async ($, on) => {
+  const g = engine(on, { replies: ['F2 is confirmed: the original query gives [].'] })
+  await g.start($)
+  expect(await g.command($, 'F2')).toBe('nothing known about F2')
+})
+
+test('the first definition of a code wins over a later line with the same code', async ($, on) => {
+  const g = engine(on, { replies: ['F2 Missing index: the query scans the table.', 'F2 Confirmed: the original query gives [].'] })
+  await g.start($)
+  await g.command($, 'F2')
+  expect(await g.band($)).toBe('**F2 Missing index**\n\nthe query scans the table.')
+})
